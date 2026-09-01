@@ -8,6 +8,7 @@ the file keeps everything.
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
 CONSOLE_FORMAT = "%(levelname)-7s %(message)s"
@@ -17,6 +18,15 @@ FILE_FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
 def configure_logging(artifacts: Path, verbose: bool = False) -> Path:
     artifacts.mkdir(parents=True, exist_ok=True)
     log_path = artifacts / "run.log"
+
+    # The default Windows console is cp1252, which cannot encode the characters
+    # used in these messages. Without this the output is silently mangled into
+    # '?' -- readable enough to miss, ugly enough to look broken.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001 - not every stream is reconfigurable
+            pass
 
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)

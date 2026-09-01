@@ -76,14 +76,17 @@ def describe(control: auto.Control, depth: int) -> str:
     return " ".join(bits)
 
 
-def find_window(hint: str) -> Optional[auto.Control]:
-    for child in auto.GetRootControl().GetChildren():
-        try:
-            if hint.casefold() in (child.Name or "").casefold():
-                return child
-        except Exception:  # noqa: BLE001
-            continue
-    return None
+def find_window(hint: str, allow_any_process: bool = False) -> Optional[auto.Control]:
+    """Locate the window to inspect, using the same rule the automation uses.
+
+    Sharing `Session._find_window` matters more here than it looks. Matching on
+    the title alone, this tool happily dumped a browser showing the project's own
+    repository page — and a tree dump of the wrong application is worse than no
+    dump at all, because the locators written from it look researched.
+    """
+    from .backend import Session
+
+    return Session._find_window(hint, allow_any_process)
 
 
 def dump(root: auto.Control, max_depth: int, out=sys.stdout) -> int:
@@ -146,11 +149,21 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--depth", type=int, default=12, help="maximum tree depth")
     parser.add_argument("--probe-grid", action="store_true", help="classify table-like controls")
     parser.add_argument("--output", help="write the dump to a file instead of stdout")
+    parser.add_argument(
+        "--allow-any-process",
+        action="store_true",
+        help="inspect a title match even when its process does not look like Fakturama",
+    )
     args = parser.parse_args(argv)
 
-    window = find_window(args.window)
+    window = find_window(args.window, args.allow_any_process)
     if window is None:
-        print(f"no window whose title contains {args.window!r} is open", file=sys.stderr)
+        print(
+            f"no Fakturama window whose title contains {args.window!r} is open.\n"
+            "Start Fakturama first. If it is running and this still fails, its process "
+            "may be named unexpectedly — re-run with --allow-any-process.",
+            file=sys.stderr,
+        )
         return 2
 
     if args.probe_grid:
