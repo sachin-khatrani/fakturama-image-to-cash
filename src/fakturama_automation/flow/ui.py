@@ -209,3 +209,8 @@ INVOICE_PAID_VALUE = Locator("paid Value", control_type="Edit", label="Value")
 
 DOCUMENTS_TABLE = Locator("Documents table", control_type="Table")
 DOCUMENTS_SEARCH = Locator("Documents search", control_type="Edit", label="Search", label_side="right")
+
+# The Invoice editor mirrors the Order editor's layout, so the address, VAT-mode
+# and totals locators above resolve there too. These are the fields unique to it.
+INVOICE_ORDER_DATE = Locator("Order Date on the Invoice", control_type="Edit", label="Order Date")
+INVOICE_DATE = Locator("Invoice Date", control_type="Edit", label="Date")

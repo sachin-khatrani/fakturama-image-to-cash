@@ -35,12 +35,24 @@ FAKTURAMA_WINDOW_HINT = "Fakturama"
 
 @dataclass
 class Screenshotter:
-    """Per-run artifact capture. Doubles as the annotated-screenshot deliverable."""
+    """Per-run artifact capture, annotated as it goes.
+
+    The annotation is not decoration. At capture time the automation already
+    knows which element it acted on and why, so drawing that rectangle and
+    caption onto the image costs nothing and produces a screenshot that explains
+    itself — which is what makes a failed run reviewable without reproducing it.
+    """
 
     directory: Path
     counter: int = 0
 
-    def capture(self, control: Optional[auto.Control], label: str) -> Optional[Path]:
+    def capture(
+        self,
+        control: Optional[auto.Control],
+        label: str,
+        highlight: Optional[auto.Control] = None,
+        caption: Optional[str] = None,
+    ) -> Optional[Path]:
         self.directory.mkdir(parents=True, exist_ok=True)
         self.counter += 1
         safe = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in label)[:60]
@@ -48,10 +60,46 @@ class Screenshotter:
         try:
             target = control if control is not None else auto.GetRootControl()
             target.CaptureToImage(str(path))
-            return path
         except Exception as exc:  # noqa: BLE001 - never fail a run over a screenshot
             log.debug("screenshot %s failed: %s", label, exc)
             return None
+
+        try:
+            self._annotate(path, target, highlight, caption or label.replace("-", " "))
+        except Exception as exc:  # noqa: BLE001 - annotation is best-effort
+            log.debug("annotating %s failed: %s", path.name, exc)
+        return path
+
+    @staticmethod
+    def _annotate(
+        path: Path,
+        captured: auto.Control,
+        highlight: Optional[auto.Control],
+        caption: str,
+    ) -> None:
+        from PIL import Image, ImageDraw
+
+        origin = captured.BoundingRectangle
+        with Image.open(path) as source:
+            image = source.convert("RGB")
+        draw = ImageDraw.Draw(image)
+
+        if highlight is not None:
+            rect = highlight.BoundingRectangle
+            # Translate from screen coordinates into the captured image.
+            box = (
+                rect.left - origin.left,
+                rect.top - origin.top,
+                rect.right - origin.left,
+                rect.bottom - origin.top,
+            )
+            if box[2] > box[0] and box[3] > box[1]:
+                draw.rectangle(box, outline=(220, 30, 30), width=3)
+
+        bar_height = 26
+        draw.rectangle((0, 0, image.width, bar_height), fill=(20, 30, 45))
+        draw.text((8, 6), caption[:160], fill=(255, 255, 255))
+        image.save(path)
 
 
 class Session:
@@ -114,8 +162,17 @@ class Session:
 
     # ------------------------------------------------------------- diagnostics
 
-    def shot(self, label: str) -> Optional[Path]:
-        return self.shots.capture(self.window, label)
+    def shot(
+        self,
+        label: str,
+        highlight: Optional[Locator] = None,
+        caption: Optional[str] = None,
+    ) -> Optional[Path]:
+        """Capture the window, optionally ringing the control this step acted on."""
+        control = None
+        if highlight is not None:
+            control = self.resolver.try_resolve(highlight)
+        return self.shots.capture(self.window, label, highlight=control, caption=caption)
 
     # ---------------------------------------------------------------- resolving
 

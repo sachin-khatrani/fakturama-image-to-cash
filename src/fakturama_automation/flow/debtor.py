@@ -96,9 +96,22 @@ def _create_debtor(session: Session, debtor: Debtor) -> None:
     session.invalidate()
 
     # 2.6 — leave the proposed Customer ID alone; it is Fakturama's to allocate.
+    # Read and record it rather than ignoring it: if the editor proposed nothing,
+    # the record will not save and it is better to know that now.
+    proposed_id = ""
+    try:
+        proposed_id = session.get_text(ui.DEBTOR_CUSTOMER_ID).strip()
+    except Exception as exc:  # noqa: BLE001
+        log.debug("%s: could not read the proposed Customer ID (%s)", STEP, exc)
+    if proposed_id:
+        log.info("%s: proposed Customer ID %r (left unchanged)", STEP, proposed_id)
+    else:
+        log.warning("%s: the New Debtor editor proposed no Customer ID", STEP)
+
     session.set_text(ui.DEBTOR_COMPANY, debtor.company)
     session.set_text(ui.DEBTOR_FIRST_NAME, debtor.first_name)
     session.set_text(ui.DEBTOR_LAST_NAME, debtor.last_name)
+    _confirm_salutation_unset(session)
 
     _fill_main_address(session, debtor)
     _fill_miscellaneous(session, debtor)
@@ -107,6 +120,26 @@ def _create_debtor(session: Session, debtor: Debtor) -> None:
     session.shot(f"{STEP}-debtor-before-save")
     session.click(ui.TOOLBAR_SAVE)  # 2.11 — once
     log.info("%s: saved new Debtor %r", STEP, debtor.company)
+
+
+def _confirm_salutation_unset(session: Session) -> None:
+    """Spec 2.6 — Salutation stays '---' when the source supplies none.
+
+    The sample image carries no salutation, so this is a confirmation rather than
+    a write. Checking it costs nothing and catches a dropdown that defaulted to a
+    real salutation, which would put an unsourced honorific on the invoice.
+    """
+    try:
+        actual = session.get_text(ui.DEBTOR_SALUTATION).strip()
+    except Exception as exc:  # noqa: BLE001 - optional control
+        log.debug("%s: could not read Salutation (%s)", STEP, exc)
+        return
+    if actual and actual not in ("---", "--", "", "-"):
+        log.warning(
+            "%s: Salutation is %r but the source supplies none; leaving it as found", STEP, actual
+        )
+    else:
+        log.info("%s: Salutation left as %r", STEP, actual or "---")
 
 
 def _fill_main_address(session: Session, debtor: Debtor) -> None:

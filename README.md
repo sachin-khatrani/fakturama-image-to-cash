@@ -14,7 +14,7 @@ What that does and does not mean:
 
 | | |
 |---|---|
-| **Verified by running it** | Extraction, the reconciliation gate, and all derived values (27 tests). The grounding ladder — every rung — against a live Win32 form, including the write/read-back cycle, combo selection, and the upper-vs-lower icon case. |
+| **Verified by running it** | Extraction, the reconciliation gate, and all derived values (27 tests). The grounding ladder — every rung — against a live Win32 form, including the write/read-back cycle, combo selection, and the upper-vs-lower icon case. The screenshot annotator (see [`docs/annotation-mechanism-example.png`](docs/annotation-mechanism-example.png)). |
 | **Written but not executed** | The flow layer (steps 1–5) and the locator catalogue in [`flow/ui.py`](src/fakturama_automation/flow/ui.py). |
 | **Deliberately not guessed** | Whether the Items table is element-addressable or canvas-rendered. The grid driver probes it at runtime and picks a strategy; the inspector answers it in one command. |
 
@@ -127,6 +127,30 @@ Four decisions worth knowing about:
 
 ---
 
+## Coverage against the specification
+
+Every numbered substep in the brief is implemented. The verification steps are the ones worth calling out, because a half-done check passes when it should fail:
+
+| Step | What is checked |
+|---|---|
+| 1.4 / 1.7 | Proposed No. read and left alone; price mode set to Net **and** VAT mode confirmed as `With VAT` |
+| 2.3 | Exact = Company + First Name + Name + ZIP + City, all five |
+| 2.6 | Customer ID read and left unchanged; Salutation confirmed still `---` |
+| 2.10.2 | Existing exact method reused; multiple or conflicting rows stop the run |
+| 3.3 | Exact SKU as a whole token — `CHR-ERG-01` does not match `CHR-ERG-011` |
+| 3.5 | Reuse requires name **and** value **and** the `S (Standard rate)` E-Invoice code; the record is opened to read the code, since the list view does not reliably show it |
+| 3.9 | Gross = unit net × (1 + VAT/100); the line discount is deliberately excluded |
+| 3.16 | Line price = qty × unit net × (1 − discount/100) |
+| 4.1 | Addresses **and** every item line re-read against the source immediately before Save |
+| 4.2 | Discount 0%; Shipping confirmed free / 0.00 |
+| 4.3 | Total Net, VAT and Total all compared to source |
+| 4.5 | Generated number, Date, Cust.Ref., **open state** and Total — all five |
+| 5.1 | Cust.Ref., Invoice address, Delivery address, Order Date, VAT mode, item lines and totals |
+| 5.3 | PAID sets paid + date + full total; not-PAID leaves all three untouched |
+| 5.5 | Invoice state and Total, and the source Order still open with the same Cust.Ref. and Total |
+| 5.6 | For a PAID document, the Invoice is reopened and the persisted method, paid flag, date and Value confirmed |
+| 5.7 | Flow ends; no Delivery, Correction or Dunning document is created |
+
 ## What testing the grounding layer actually caught
 
 Worth recording, because each was a silent-wrong-answer bug rather than a crash:
@@ -143,8 +167,9 @@ Worth recording, because each was a silent-wrong-answer bug rather than a crash:
 - **Not run against Fakturama.** See [Status](#status-stated-plainly). The locator catalogue needs one pass with the inspector.
 - **The sample's delivery address differs from its billing address.** The specification's step 2.8 covers only the identical case ("if billing and delivery are identical, also assign the Delivery address role"). The supplied image has a separate warehouse address, so a second address record is required. That branch is implemented (`debtor._add_delivery_address`) but it is an interpretation of a case the written procedure does not cover, and it is the first thing I would confirm.
 - **Canvas-mode item lines need Tesseract.** If the grid turns out to be canvas-rendered and OCR is unavailable, the run stops for manual review rather than writing item lines it cannot verify.
-- **Order-level discount and shipping** are held at 0 / free, per step 4.2. Nothing reads order-level values from the image, because the sample supplies none.
-- **Screenshots are captured but not annotated.** Every step writes one to `artifacts/screenshots/`; the callouts are still manual.
+- **Order-level discount and shipping** are held at 0 / free and confirmed, per step 4.2. Nothing *reads* order-level values from the image, because the sample supplies none — an image that did carry them would need extraction-schema fields added.
+- **Step 5.6 reopens the Invoice only for a PAID document.** For an unpaid one there is nothing beyond what 5.5 already confirmed, and the spec makes the reopen conditional.
+- **Screenshots are annotated automatically, but none are of Fakturama yet.** Every step writes a capture to `artifacts/screenshots/` with a caption bar and a red ring around the control that step acted on — the rectangle comes from the resolved element, so it is correct by construction. The example in `docs/` was produced against the Win32 test form used to validate the grounding ladder, **not** against Fakturama; real captures need a Fakturama run. No screen recording is produced.
 - **One currency.** `EUR` is carried through and never converted.
 
 ---

@@ -37,16 +37,16 @@ def run_flow(session: Session, doc: OrderDocument, *, skip_duplicate_check: bool
         check_not_already_booked(session, doc)
 
     # 1 — open the Order first; it stays open for everything that follows.
-    open_new_order(session, doc)
+    order_no = open_new_order(session, doc)
 
     # 2 — the Order's address selector is the Debtor existence check.
     select_or_create_debtor(session, doc.debtor)
 
     # 3 — the Order's product selector is the Product existence check.
-    process_items(session, doc.items)
+    grid = process_items(session, doc.items)
 
     # 4 — confirm against the source, save once, verify the saved row.
-    complete_and_save_order(session, doc)
+    complete_and_save_order(session, doc, order_no, grid)
 
     # 4.6 — the follow-up action, which is what keeps the Order relationship.
     create_followup_invoice(session)

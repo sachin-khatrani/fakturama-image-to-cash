@@ -25,13 +25,17 @@ STEP = "3-product"
 STEP_VAT = "3.4-vat"
 
 
-def process_items(session: Session, items: list[LineItem]) -> None:
-    """Spec 3.1 — run the whole branch for every item, in source order."""
+def process_items(session: Session, items: list[LineItem]) -> ItemGrid:
+    """Spec 3.1 — run the whole branch for every item, in source order.
+
+    Returns the grid so step 4.1 can re-read the lines before the Order is saved.
+    """
     grid = ItemGrid(session)
     for item in items:
         log.info("%s: line %d — %s", STEP, item.position, item.sku)
         select_or_create_product(session, item)
         complete_line(session, grid, item)
+    return grid
 
 
 def select_or_create_product(session: Session, item: LineItem) -> None:
@@ -109,22 +113,20 @@ def _ensure_vat(session: Session, item: LineItem) -> None:
     """
     open_data_menu(session, ui.MENU_DATA_VATS)
     rows = _search_vat(session, item.vat_name)
+    candidates = [row for row in rows if row.contains_all([item.vat_name])]
 
-    exact = [row for row in rows if _vat_row_is_consistent(row, item)]
-    conflicting = [row for row in rows if row.contains_all([item.vat_name]) and row not in exact]
-
-    if len(exact) == 1:
-        log.info("%s: reusing existing %s", STEP_VAT, item.vat_name)
-        return
-    if len(exact) > 1 or conflicting:
-        shot = session.shot(f"{STEP_VAT}-conflict")
+    if len(candidates) > 1:
+        shot = session.shot(f"{STEP_VAT}-ambiguous")
         raise ManualReviewRequired(
             STEP_VAT,
-            f"VAT {item.vat_name!r} is ambiguous or conflicts with an existing definition",
-            expected=f"name={item.vat_name}, value={item.vat_percent}, code={ui.VAT_STANDARD_RATE_CODE}",
-            observed=[row.text for row in rows],
+            f"{len(candidates)} VAT rows match {item.vat_name!r}",
+            observed=[row.text for row in candidates],
             screenshot=str(shot) if shot else None,
         )
+
+    if len(candidates) == 1:
+        _confirm_existing_vat(session, candidates[0], item)  # 3.5
+        return
 
     session.click(ui.LIST_NEW_ICON)  # 3.6
     session.invalidate()
@@ -139,11 +141,66 @@ def _ensure_vat(session: Session, item: LineItem) -> None:
     log.info("%s: created %s at %s%%", STEP_VAT, item.vat_name, item.vat_percent)
 
 
-def _vat_row_is_consistent(row: Row, item: LineItem) -> bool:
-    percent = _decimal_text(item.vat_percent)
-    return row.contains_all([item.vat_name]) and (
-        row.contains_all([percent]) or row.contains_all([str(int(item.vat_percent))])
+def _confirm_existing_vat(session: Session, row: Row, item: LineItem) -> None:
+    """Spec 3.5 — reuse a VAT record only when all three settings agree.
+
+    Name, Value AND the E-Invoice code must match. The list view does not
+    reliably show the code column, so the record is opened and read: a row named
+    'VAT 19%' whose code is a reduced or zero rate would mis-tax every line
+    booked against it, and that is exactly the conflict this step exists to
+    catch. Reusing on name alone would defeat the check entirely.
+    """
+    try:
+        row.control.DoubleClick(simulateMove=False)
+        session.wait_for_window("VAT")
+        session.invalidate()
+    except Exception as exc:  # noqa: BLE001
+        shot = session.shot(f"{STEP_VAT}-unreadable")
+        raise ManualReviewRequired(
+            STEP_VAT,
+            f"an existing VAT row matches {item.vat_name!r} but could not be opened to "
+            "confirm its value and E-Invoice code",
+            observed=f"{row.text} ({exc})",
+            screenshot=str(shot) if shot else None,
+        ) from exc
+
+    problems = []
+    checks = (
+        ("Name", ui.VAT_NAME, item.vat_name),
+        ("Value", ui.VAT_VALUE, _decimal_text(item.vat_percent)),
+        ("VAT code (E-Invoice)", ui.VAT_CODE, ui.VAT_STANDARD_RATE_CODE),
     )
+    for label, locator, expected in checks:
+        try:
+            actual = session.get_text(locator).strip()
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"{label}: could not read ({exc})")
+            continue
+        if not _setting_matches(label, actual, expected):
+            problems.append(f"{label}: expected {expected!r}, found {actual!r}")
+
+    if problems:
+        shot = session.shot(f"{STEP_VAT}-conflict", highlight=ui.VAT_CODE)
+        raise ManualReviewRequired(
+            STEP_VAT,
+            f"the existing {item.vat_name!r} record conflicts with what this order needs",
+            expected=f"name={item.vat_name}, value={item.vat_percent}, code={ui.VAT_STANDARD_RATE_CODE}",
+            observed=problems,
+            screenshot=str(shot) if shot else None,
+        )
+    log.info("%s: reusing existing %s (value and standard-rate code confirmed)", STEP_VAT, item.vat_name)
+
+
+def _setting_matches(label: str, actual: str, expected: str) -> bool:
+    a, b = actual.casefold(), expected.casefold()
+    if label.startswith("VAT code"):
+        # 'S (Standard rate)' may render as 'S', 'Standard rate' or both.
+        return a == b or a.startswith("s") or "standard" in a
+    if b in a or a in b:
+        return True
+    a_digits = "".join(ch for ch in a if ch.isdigit())
+    b_digits = "".join(ch for ch in b if ch.isdigit())
+    return bool(b_digits) and (a_digits == b_digits or a_digits.lstrip("0") == b_digits.lstrip("0"))
 
 
 def _search_vat(session: Session, name: str) -> list[Row]:
