@@ -40,7 +40,13 @@ STEP = "3-items-grid"
 # Printed column order of the Order's item table, used for keyboard navigation
 # in canvas mode. Confirmed against the running application by the inspector;
 # it is a fallback for a grid that exposes no headers of its own.
-DEFAULT_COLUMNS = ("Pos.", "Qty.", "Unit", "Item Number", "Name", "Description", "U.Price", "Discount", "VAT", "Price")
+# Confirmed against Fakturama 2.2.0's Order editor. Note 'Item No.' (not
+# 'Item Number'), the 'Picture' column between Item No. and Name, and VAT sitting
+# BEFORE U.Price -- a keyboard-driven grid walks these by position, so the order
+# is load-bearing, not documentation.
+DEFAULT_COLUMNS = (
+    "Pos.", "Qty.", "Item No.", "Picture", "Name", "Description", "VAT", "U.Price", "Discount", "Price",
+)
 
 ITEMS_TABLE_CANDIDATES = (
     Locator("Items table", control_type="Table"),

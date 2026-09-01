@@ -54,6 +54,12 @@ class Locator:
     index: Optional[int] = None
     expect_siblings: Optional[int] = None
     max_depth: int = 14
+    # Bound on how far a label-anchored candidate may sit from its label, in
+    # pixels. Needed where several icon clusters share a region: the Addresses
+    # icons sit 10 and 40px from their label while the Items icon is 109px away,
+    # and a radius wide enough to be generally safe swept all three in and
+    # tripped the sibling-count guard.
+    radius: Optional[float] = None
     predicate_names: tuple[str, ...] = field(default=())
 
     def __str__(self) -> str:  # pragma: no cover - diagnostics only
@@ -160,13 +166,38 @@ def _by_automation_id(scope: auto.Control, loc: Locator) -> list[auto.Control]:
 
 
 def _by_name(scope: auto.Control, loc: Locator) -> list[auto.Control]:
+    """Match by accessible name, exact matches first.
+
+    Ordering matters more than it looks. A substring locator for "Order" matches
+    Fakturama's 'Create: New Order' — and also 'Get new orders and products from
+    web shop', which sits earlier in the toolbar. Taking the first hit clicked
+    the web-shop sync instead of opening an order. An exact match, when one
+    exists, always wins.
+    """
     if loc.name is None:
         return []
-    return [
+    found = [
         c
         for c in _matching(scope, loc.control_type, loc.max_depth, loc.name, loc.name_contains)
         if _visible(c)
     ]
+    if not loc.name_contains or len(found) < 2:
+        return found
+
+    wanted = loc.name.strip().casefold()
+    exact = [c for c in found if _name_of(c).strip().casefold() == wanted]
+    if exact:
+        return exact
+    # No exact hit: prefer the shortest name, which is the least-padded match,
+    # and warn — an ambiguous substring locator is a latent wrong click.
+    found.sort(key=lambda c: len(_name_of(c)))
+    log.warning(
+        "%s matched %d controls by substring; using %r. Tighten this locator.",
+        loc.description,
+        len(found),
+        _name_of(found[0])[:60],
+    )
+    return found
 
 
 def _by_label(scope: auto.Control, loc: Locator) -> list[auto.Control]:
@@ -386,7 +417,7 @@ def _label_anchored_candidates(scope: auto.Control, loc: Locator) -> list[auto.C
         return []
 
     scope_rect = _rect(scope)
-    radius = (
+    radius = loc.radius if loc.radius is not None else (
         max(scope_rect.width() * 0.25, LABEL_MIN_GAP_ALLOWANCE)
         if scope_rect
         else LABEL_MIN_GAP_ALLOWANCE
@@ -401,10 +432,19 @@ def _label_anchored_candidates(scope: auto.Control, loc: Locator) -> list[auto.C
             continue
         for label in labels:
             lrect = _rect(label)
-            if lrect is not None and _rect_distance(lrect, crect) <= radius:
-                if not any(_same_control(candidate, seen) for seen in out):
-                    out.append(candidate)
-                break
+            if lrect is None or _rect_distance(lrect, crect) > radius:
+                continue
+            # Direction matters where two icon clusters are close. The Items
+            # selector sits BELOW its label while the Addresses icons sit above
+            # it; proximity alone made the product locator resolve to the
+            # address icon.
+            if loc.label_side == "below" and crect.top < lrect.bottom - 2:
+                continue
+            if loc.label_side == "right" and crect.left < lrect.right - 2:
+                continue
+            if not any(_same_control(candidate, seen) for seen in out):
+                out.append(candidate)
+            break
     return out
 
 

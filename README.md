@@ -15,7 +15,8 @@ What that does and does not mean:
 | | |
 |---|---|
 | **Verified by running it** | Extraction, the reconciliation gate, and all derived values. The grounding ladder — every rung — against a live Win32 form, including the write/read-back cycle, combo selection, and the upper-vs-lower icon case. The screenshot annotator (see [`docs/annotation-mechanism-example.png`](docs/annotation-mechanism-example.png)). **The flow itself (steps 1–5), executed end to end against a simulated UI** — see below. 55 tests. |
-| **Not executed against Fakturama** | The locator catalogue in [`flow/ui.py`](src/fakturama_automation/flow/ui.py) — whether these labels match the widget names Fakturama publishes. That is the one thing the simulation cannot answer, and the inspector answers it in one command. |
+| **Confirmed against Fakturama 2.2.0** | The locator catalogue — every locator above was resolved against the running application and corrected where wrong (see below). Steps 1.3–1.7 were executed for real: New Order opened, Cust.Ref. written and read back, price mode changed Gross → Net, VAT mode confirmed. |
+| **Still not executed against Fakturama** | Steps 2–5 end to end. The item grid is canvas-rendered (confirmed), so item lines need OCR, and Tesseract is not installed here. |
 | **Deliberately not guessed** | Whether the Items table is element-addressable or canvas-rendered. The grid driver probes it at runtime and picks a strategy; the inspector reports it. |
 
 ### The flow runs, against a simulation
@@ -182,12 +183,12 @@ And from verifying a clean clone, then simulating the flow:
 
 ## Known gaps
 
-- **Not run against Fakturama.** See [Status](#status-stated-plainly). The locator catalogue needs one pass with the inspector. The Fakturama installer requires elevation, which a non-interactive session cannot grant, so the install is a manual step.
+- **Steps 2–5 have not been run end to end** against Fakturama. Steps 1.3–1.7 have. The blocker is the item grid: it is canvas-rendered, so line values can only be verified by OCR, and Tesseract is not installed here — the grid driver halts rather than writing item lines it cannot verify.
 - **The sample's delivery address differs from its billing address.** The specification's step 2.8 covers only the identical case ("if billing and delivery are identical, also assign the Delivery address role"). The supplied image has a separate warehouse address, so a second address record is required. That branch is implemented (`debtor._add_delivery_address`) but it is an interpretation of a case the written procedure does not cover, and it is the first thing I would confirm.
-- **Canvas-mode item lines need Tesseract.** If the grid turns out to be canvas-rendered and OCR is unavailable, the run stops for manual review rather than writing item lines it cannot verify.
+- **The item grid IS canvas-rendered — confirmed, not hypothetical.** `--probe-grid` reports every candidate as `SWT_Window0` panes carrying only `LegacyIAccessible`: no Grid/Table pattern, no cell elements, no column headers. The keyboard-plus-OCR path is therefore the required one, not a fallback, and it needs Tesseract installed.
 - **Order-level discount and shipping** are held at 0 / free and confirmed, per step 4.2. Nothing *reads* order-level values from the image, because the sample supplies none — an image that did carry them would need extraction-schema fields added.
 - **Step 5.6 reopens the Invoice only for a PAID document.** For an unpaid one there is nothing beyond what 5.5 already confirmed, and the spec makes the reopen conditional.
-- **Screenshots are annotated automatically, but none are of Fakturama yet.** Every step writes a capture to `artifacts/screenshots/` with a caption bar and a red ring around the control that step acted on — the rectangle comes from the resolved element, so it is correct by construction. The example in `docs/` was produced against the Win32 test form used to validate the grounding ladder, **not** against Fakturama; real captures need a Fakturama run. No screen recording is produced.
+- **Annotated screenshots of the real application are in [`docs/screenshots/`](docs/screenshots).** Each carries a caption bar and a red ring around the control that step acted on, drawn from the resolved element's own rectangle. They cover steps 1.3–1.7 and the two selector icons; steps 2–5 are not covered because the flow does not reach them yet. No screen recording is produced. The live widget-tree dumps are in `docs/tree-main.txt` and `docs/tree-order.txt`.
 - **One currency.** `EUR` is carried through and never converted.
 
 ---

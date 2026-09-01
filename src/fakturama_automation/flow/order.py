@@ -40,7 +40,7 @@ def open_new_order(session: Session, doc: OrderDocument) -> str:
 
     # 1.7 — Net price mode, and VAT must stay 'With VAT'.
     try:
-        session.click(ui.ORDER_PRICE_MODE_NET)
+        session.select_option(ui.ORDER_PRICE_MODE, ui.ORDER_PRICE_MODE_NET)
     except Exception as exc:  # noqa: BLE001
         raise ManualReviewRequired(
             STEP_OPEN, "could not set the document price mode to Net", observed=str(exc)

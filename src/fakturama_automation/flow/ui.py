@@ -28,24 +28,31 @@ from ..uia.locators import Locator
 # application chrome
 # --------------------------------------------------------------------------- #
 
+# Confirmed against Fakturama 2.2.0 with the inspector. Exact names, not
+# substrings: "Order" also matches 'Get new orders and products from web shop',
+# which sits earlier in the toolbar and syncs a web shop instead.
 TOOLBAR_ORDER = Locator(
-    "Order button in the top toolbar", control_type="Button", name="Order", name_contains=True
+    "Order button in the top toolbar", control_type="Button", name="Create: New Order"
 )
-TOOLBAR_SAVE = Locator("toolbar Save control", control_type="Button", name="Save", name_contains=True)
-
-MENU_DATA = Locator("Data menu", control_type="MenuItem", name="Data", name_contains=True)
-MENU_DATA_VATS = Locator("Data > VATs", control_type="MenuItem", name="VAT", name_contains=True)
-MENU_DATA_PAYMENTS = Locator(
-    "Data > terms of payment", control_type="MenuItem", name="payment", name_contains=True
-)
-MENU_DATA_DOCUMENTS = Locator(
-    "Data > Documents", control_type="MenuItem", name="Documents", name_contains=True
+TOOLBAR_SAVE = Locator(
+    "toolbar Save control", control_type="Button", name="Save the current contents"
 )
 
-NEW_CONTACT = Locator(
-    "New Contact in the left New panel", control_type="Button", name="New Contact", name_contains=True
-)
-NEW_PRODUCT = Locator("New product", control_type="Button", name="New product", name_contains=True)
+# The Data lists are reached from the left Navigation View, not the menu bar.
+# Both exist; the navigation entries are plain Text elements with exact names and
+# need no menu expansion, so they are the more reliable route.
+MENU_DATA = Locator("Data section in the Navigation View", control_type="Text", name="Data")
+MENU_DATA_VATS = Locator("Data > VATs", control_type="Text", name="VATs")
+MENU_DATA_PAYMENTS = Locator("Data > terms of payment", control_type="Text", name="terms of payment")
+MENU_DATA_DOCUMENTS = Locator("Data > Documents", control_type="Text", name="Documents")
+
+# 'Create a new contact' is a SplitButton, not a Button -- as a Button this did
+# not resolve at all.
+# Spec 2.5 says "New Contact in the left New panel" -- and the left panel entry
+# is an exact-named Text element, where the toolbar equivalent is a SplitButton
+# named 'Create a new contact'. Use the panel, as the specification does.
+NEW_CONTACT = Locator("New Contact in the left New panel", control_type="Text", name="New Contact")
+NEW_PRODUCT = Locator("New product in the left New panel", control_type="Text", name="New product")
 
 # --------------------------------------------------------------------------- #
 # order editor
@@ -53,35 +60,54 @@ NEW_PRODUCT = Locator("New product", control_type="Button", name="New product", 
 
 ORDER_NO = Locator("Order No.", control_type="Edit", label="No.")
 ORDER_DATE = Locator("Order Date", control_type="Edit", label="Date")
-ORDER_CUST_REF = Locator("Cust.Ref.", control_type="Edit", label="Cust.Ref.")
+ORDER_CUST_REF = Locator("Cust.Ref.", control_type="Edit", name="Cust.Ref.")
 
-ORDER_PRICE_MODE_NET = Locator("document price mode Net", control_type="RadioButton", name="Net")
-ORDER_VAT_MODE = Locator("VAT mode", control_type="ComboBox", label="VAT")
+# The document price mode is an UNNAMED ComboBox carrying 'Gross' or 'Net' --
+# not a radio button. As a RadioButton this resolved to nothing, so step 1.7
+# would silently have left the document in Gross mode. It is identified by its
+# own value; see order.py::_set_price_mode_net.
+# It is the unnamed ComboBox sitting to the right of the Date field, and it
+# defaults to Gross -- so this is a write, not a confirmation.
+ORDER_PRICE_MODE = Locator(
+    "document price mode (Net/Gross)",
+    control_type="ComboBox",
+    label="Date",
+    label_side="right",
+    radius=400,
+)
+ORDER_PRICE_MODE_NET = "Net"
+ORDER_VAT_MODE = Locator("VAT mode", control_type="ComboBox", name="VAT")
 
-ORDER_DISCOUNT = Locator("order Discount", control_type="Edit", label="Discount")
-ORDER_SHIPPING = Locator("order Shipping", control_type="ComboBox", label="Shipping")
+ORDER_DISCOUNT = Locator("order Discount", control_type="Edit", name="Discount")
+ORDER_SHIPPING = Locator("order Shipping", control_type="ComboBox", name="Shipping")
 
-ORDER_TOTAL_NET = Locator("Total Net", control_type="Text", label="Total Net", label_side="right")
-ORDER_TOTAL_VAT = Locator("Total VAT", control_type="Text", label="VAT", label_side="right")
-ORDER_TOTAL_GROSS = Locator("Total", control_type="Text", label="Total", label_side="right")
+# Confirmed: the totals are named Edit controls, not Text.
+ORDER_TOTAL_NET = Locator("Total Net", control_type="Edit", name="Total")
+ORDER_TOTAL_VAT = Locator("Total VAT", control_type="Edit", name="VAT")
+ORDER_TOTAL_GROSS = Locator("Total Gross", control_type="Edit", name="Total Gross")
 
 # The two icons beside Addresses. The specification distinguishes them only by
 # position: the upper one opens the existing-contact selector, the lower green +
 # starts a brand-new Debtor. Picking the wrong one silently creates a duplicate
 # customer, so the sibling count is asserted — see uia/locators.py::_by_index.
+# Confirmed: these are 20x20 Image controls, not Buttons -- as Buttons neither
+# resolved. They sit 10px and 40px from the Addresses label; the Items icon is
+# 109px away, hence the radius bound.
 ADDRESS_SELECT_ICON = Locator(
     "upper existing-contact icon beside Addresses",
-    control_type="Button",
+    control_type="Image",
     label="Addresses",
     index=0,
     expect_siblings=2,
+    radius=60,
 )
 ADDRESS_NEW_ICON = Locator(
     "lower green + icon beside Addresses",
-    control_type="Button",
+    control_type="Image",
     label="Addresses",
     index=1,
     expect_siblings=2,
+    radius=60,
 )
 
 ORDER_INVOICE_ADDRESS = Locator(
@@ -91,12 +117,15 @@ ORDER_DELIVERY_ADDRESS = Locator(
     "Delivery address field", control_type="Edit", label="Delivery address", label_side="below"
 )
 
+# The Items selector sits 10px BELOW its label; the Addresses icons are above
+# it and were winning on proximity alone until direction was taken into account.
 PRODUCT_SELECT_ICON = Locator(
     "upper Product-selection icon beside the Items table",
-    control_type="Button",
+    control_type="Image",
     label="Items",
+    label_side="below",
     index=0,
-    expect_siblings=2,
+    radius=30,
 )
 
 FOLLOWUP_INVOICE = Locator(

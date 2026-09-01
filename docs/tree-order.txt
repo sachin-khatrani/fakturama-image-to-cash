@@ -1,0 +1,177 @@
+Window name='Fakturama - C:\\Users\\sachi\\Fakturama2' class=SWT_Window0 [1500x900] {LegacyIAccessible}
+  Pane id='854720' class=SWT_Window0 [1482x751] {LegacyIAccessible}
+  Pane id='3147430' class=SWT_Window0 [1482x77] {LegacyIAccessible}
+  TitleBar [1462x35] {LegacyIAccessible}
+  MenuBar name='Application' id='MenuBar' [1482x24] {LegacyIAccessible}
+    Pane id='1573636' class=SWT_Window0 [1482x751] {LegacyIAccessible}
+    Pane id='1575264' class=ReBarWindow32 [1472x67] {LegacyIAccessible}
+    MenuBar name='System' id='MenuBar' [28x28] {LegacyIAccessible}
+    Button name='Minimize' [60x37] {Invoke,LegacyIAccessible}
+    Button name='Maximize' [59x37] {Invoke,LegacyIAccessible}
+    Button name='Close' [60x37] {Invoke,LegacyIAccessible}
+    MenuItem name='File' [41x24] {Invoke,ExpandCollapse,LegacyIAccessible}
+    MenuItem name='Edit' [44x24] {Invoke,ExpandCollapse,LegacyIAccessible}
+    MenuItem name='Data' [50x24] {Invoke,ExpandCollapse,LegacyIAccessible}
+    MenuItem name='New' [48x24] {Invoke,ExpandCollapse,LegacyIAccessible}
+    MenuItem name='Extra' [51x24] {Invoke,ExpandCollapse,LegacyIAccessible}
+    MenuItem name='Window' [73x24] {Invoke,ExpandCollapse,LegacyIAccessible}
+    MenuItem name='Help' [50x24] {Invoke,ExpandCollapse,LegacyIAccessible}
+      Pane name='Fakturama Perspective' id='2230458' class=SWT_Window0 [1482x751] {LegacyIAccessible}
+      ToolBar id='461498' class=ToolbarWindow32 [162x59] {LegacyIAccessible}
+      ToolBar id='461294' class=ToolbarWindow32 [172x59] {LegacyIAccessible}
+      ToolBar id='68386' class=ToolbarWindow32 [332x67] {LegacyIAccessible}
+      ToolBar id='68388' class=ToolbarWindow32 [750x59] {LegacyIAccessible}
+      MenuItem name='System' [28x28] {Invoke,ExpandCollapse,LegacyIAccessible}
+        Pane id='1050878' class=SWT_Window0 [1482x751] {LegacyIAccessible}
+        Button name='Get new orders and products from web shop' [79x59] {Invoke,LegacyIAccessible}
+        Button name='Print/Export this document as an OpenOffice Writer document' [41x59] {Invoke,LegacyIAccessible}
+        Button name='Save the current contents' [42x59] {Invoke,LegacyIAccessible}
+        Button name='Create: New Order' [49x59] {Invoke,LegacyIAccessible}
+        Button name='Create: New Invoice' [58x59] {Invoke,LegacyIAccessible}
+        Button name='Create: New Delivery Note' [65x59] {Invoke,LegacyIAccessible}
+        Button name='Create a new product' [62x67] {Invoke,LegacyIAccessible}
+        SplitButton name='Create a new contact' [87x67] {Invoke,LegacyIAccessible}
+        Button name='Create: New Expenditure' [122x67] {Invoke,LegacyIAccessible}
+        Button name='Create: New Receipt Voucher' [61x67] {Invoke,LegacyIAccessible}
+        Button name='Open the web site of the parcel service.' [50x59] {Invoke,LegacyIAccessible}
+        Button name='Open the project web site www.fakturama.info' [44x59] {Invoke,LegacyIAccessible}
+        Button name='Open the calculator' [78x59] {Invoke,LegacyIAccessible}
+          Pane name='Navigation View' id='787006' class=SWT_Window0 [296x751] {LegacyIAccessible}
+          Tab name='New Order' id='1444196' class=SWT_Window0 [1182x427] {Selection,LegacyIAccessible}
+          Tab name='Documents' id='133882' class=SWT_Window0 [1182x320] {Selection,LegacyIAccessible}
+            Pane id='789174' class=SWT_Window0 [296x751] {LegacyIAccessible}
+            ToolBar id='68392' class=ToolbarWindow32 [46x23] {LegacyIAccessible}
+            Pane name='New Order' id='1509152' class=SWT_Window0 [1176x397] {LegacyIAccessible}
+            TabItem name='Fakturama' [96x24] {SelectionItem,LegacyIAccessible}
+            TabItem name='New Order' [148x24] {SelectionItem,LegacyIAccessible}
+            Pane id='68348' class=SWT_Window0 [46x23] {LegacyIAccessible}
+            ToolBar id='68384' class=ToolbarWindow32 [46x23] {LegacyIAccessible}
+            Pane name='Documents' id='68352' class=SWT_Window0 [1176x290] {LegacyIAccessible}
+            TabItem name='Documents' [151x24] {SelectionItem,LegacyIAccessible}
+              Pane id='1706394' class=SWT_Window0 [286x74] {LegacyIAccessible}
+              Pane id='1706138' class=SWT_Window0 [286x384] {LegacyIAccessible}
+              Pane id='1443092' class=SWT_Window0 [286x105] {LegacyIAccessible}
+              Pane id='1836334' class=SWT_Window0 [286x136] {LegacyIAccessible}
+              Button name='Minimize' [23x22] {Invoke,LegacyIAccessible}
+              Button name='Maximize' [23x22] {Invoke,LegacyIAccessible}
+              Pane id='1704850' class=SWT_Window0 [1176x397] {LegacyIAccessible}
+              ToolBar id='68382' class=ToolbarWindow32 [46x22] {LegacyIAccessible}
+              Button name='Minimize' [23x22] {Invoke,LegacyIAccessible}
+              Button name='Maximize' [23x22] {Invoke,LegacyIAccessible}
+              Pane id='68354' class=SWT_Window0 [1176x290] {LegacyIAccessible}
+                Text name='Web Shop' id='1247322' class=SWT_Window0 [95x26] {LegacyIAccessible}
+                Text name='Documents' id='2295946' class=SWT_Window0 [102x26] {LegacyIAccessible}
+                Text name='Products' id='133852' class=SWT_Window0 [84x26] {LegacyIAccessible}
+                Text name='Creditors' id='787092' class=SWT_Window0 [87x26] {LegacyIAccessible}
+                Text name='Debtors' id='2687144' class=SWT_Window0 [80x26] {LegacyIAccessible}
+                Text name='terms of payment' id='524986' class=SWT_Window0 [144x26] {LegacyIAccessible}
+                Text name='Shippings' id='1444124' class=SWT_Window0 [92x26] {LegacyIAccessible}
+                Text name='VATs' id='1377676' class=SWT_Window0 [57x26] {LegacyIAccessible}
+                Text name='Texts' id='524898' class=SWT_Window0 [60x26] {LegacyIAccessible}
+                Text name='Lists' id='1902376' class=SWT_Window0 [55x26] {LegacyIAccessible}
+                Text name='Expenditure Vouchers' id='655994' class=SWT_Window0 [169x26] {LegacyIAccessible}
+                Text name='Receipt Vouchers' id='3999500' class=SWT_Window0 [140x26] {LegacyIAccessible}
+                Text name='New product' id='3934190' class=SWT_Window0 [113x26] {LegacyIAccessible}
+                Text name='New Contact' id='1050716' class=SWT_Window0 [112x26] {LegacyIAccessible}
+                Text name='ParcelService' id='461160' class=SWT_Window0 [113x26] {LegacyIAccessible}
+                Text name='www.fakturama.info' id='1181702' class=SWT_Window0 [159x26] {LegacyIAccessible}
+                Text name='Calculator' id='2033708' class=SWT_Window0 [94x26] {LegacyIAccessible}
+                Pane id='199280' class=SWT_Window0 [1176x262] {LegacyIAccessible}
+                Pane id='68514' class=SWT_Window0 [1176x132] {LegacyIAccessible}
+                Pane id='1836816' class=SWT_Window0 [1176x3] {LegacyIAccessible}
+                Button name='Create: Order' [23x22] {Invoke,LegacyIAccessible}
+                Button name='Delete the marked entry' [23x22] {Invoke,LegacyIAccessible}
+                Pane id='68360' class=SWT_Window0 [1138x286] {LegacyIAccessible}
+                  Pane id='460964' class=SWT_Window0 [1155x344] {LegacyIAccessible}
+                  ScrollBar name='Vertical' id='NonClientVerticalScrollBar' [21x262] {LegacyIAccessible}
+                  Pane id='68516' class=SWT_Window0 [1155x162] {LegacyIAccessible}
+                  ScrollBar name='Vertical' id='NonClientVerticalScrollBar' [21x132] {LegacyIAccessible}
+                  Pane id='68362' class=SWT_Window0 [1138x36] {LegacyIAccessible}
+                  Pane id='68378' class=SWT_Window0 [1138x245] {LegacyIAccessible}
+                    Text name='No.' id='68412' class=Static [23x20] {LegacyIAccessible}
+                    Pane id='68414' class=SWT_Window0 [785x28] {LegacyIAccessible}
+                    Pane id='68428' class=SWT_Window0 [87x32] {LegacyIAccessible}
+                    Pane id='68434' class=SWT_Window0 [1155x154] {LegacyIAccessible}
+                    Pane id='68498' class=SWT_Window0 [36x128] {LegacyIAccessible}
+                    Pane id='68508' class=SWT_Window0 [1111x128] {LegacyIAccessible}
+                    Button name='Line up' id='UpButton' [21x21] {Invoke,LegacyIAccessible}
+                    Thumb name='Position' id='ScrollbarThumb' [21x168] {LegacyIAccessible}
+                    Button name='Page down' id='DownPageButton' [21x52] {Invoke,LegacyIAccessible}
+                    Button name='Line down' id='DownButton' [21x21] {Invoke,LegacyIAccessible}
+                    Pane id='68534' class=SWT_Window0 [56x50] {LegacyIAccessible}
+                    Pane id='68540' class=SWT_Window0 [412x152] {LegacyIAccessible}
+                    Pane id='68544' class=SWT_Window0 [671x162] {LegacyIAccessible}
+                    Button name='Line up' id='UpButton' [21x21] {Invoke,LegacyIAccessible}
+                    Thumb name='Position' id='ScrollbarThumb' [21x73] {LegacyIAccessible}
+                    Button name='Page down' id='DownPageButton' [21x17] {Invoke,LegacyIAccessible}
+                    Button name='Line down' id='DownButton' [21x21] {Invoke,LegacyIAccessible}
+                    Text id='68364' class=Static [4x20] {LegacyIAccessible}
+                    Pane id='68366' class=SWT_Window0 [212x36] {LegacyIAccessible}
+                      Edit id='68416' class=Edit [200x26] {Value,LegacyIAccessible}
+                      Text name='Date' id='68418' class=Static [32x20] {LegacyIAccessible}
+                      Pane id='68420' class=SWT_Window0 [154x28] {LegacyIAccessible}
+                      ComboBox id='68424' class=ComboBox [225x28] {Value,ExpandCollapse,LegacyIAccessible}
+                      Text name='Order' id='68430' class=Static [47x20] {LegacyIAccessible}
+                      Image id='68432' class=Static [32x32] {LegacyIAccessible}
+                      Text name='Cust.Ref.' id='68436' class=Static [56x20] {LegacyIAccessible}
+                      Edit name='Cust.Ref.' id='68438' class=Edit [379x26] {Value,LegacyIAccessible}
+                      Pane id='68440' class=SWT_Window0 [315x88] {LegacyIAccessible}
+                      Group name='Create a follow-up document' id='68480' class=SWT_GROUP [367x82] {LegacyIAccessible}
+                      Pane id='68484' class=SWT_Window0 [67x80] {LegacyIAccessible}
+                      Tab name='Invoice address' id='68494' class=SWT_Window0 [379x80] {Selection,LegacyIAccessible}
+                      Text name='Items' id='68500' class=Static [36x20] {LegacyIAccessible}
+                      Image id='68502' class=Static [20x20] {LegacyIAccessible}
+                      Image id='68504' class=Static [16x16] {LegacyIAccessible}
+                      Image id='68506' class=Static [16x16] {LegacyIAccessible}
+                      Image id='68512' class=Static [16x16] {LegacyIAccessible}
+                      Pane id='68510' class=SWT_Window0 [1099x124] {LegacyIAccessible}
+                      Text name='Remarks' id='68536' class=Static [56x20] {LegacyIAccessible}
+                      Image id='68538' class=Static [20x20] {LegacyIAccessible}
+                      Edit id='68542' class=Edit [412x152] {Value,LegacyIAccessible}
+                      Text name='Total Gross' id='68546' class=Static [73x20] {LegacyIAccessible}
+                      Edit name='Total Gross' id='68548' class=Edit [231x26] {Value,LegacyIAccessible}
+                      Text name='Discount' id='68550' class=Static [58x20] {LegacyIAccessible}
+                      Edit name='Discount' id='68552' class=Edit [231x26] {Value,LegacyIAccessible}
+                      Text name='Shipping' id='68554' class=Static [59x20] {LegacyIAccessible}
+                      ComboBox name='Shipping' id='68556' class=ComboBox [361x28] {Value,ExpandCollapse,LegacyIAccessible}
+                      Edit id='68562' class=Edit [231x28] {Value,LegacyIAccessible}
+                      Text name='VAT' id='68564' class=Static [25x20] {LegacyIAccessible}
+                      Edit name='VAT' id='68566' class=Edit [231x26] {Value,LegacyIAccessible}
+                      Text name='Total' id='68568' class=Static [33x20] {LegacyIAccessible}
+                      Edit name='Total' id='68570' class=Edit [231x26] {Value,LegacyIAccessible}
+                      Text name='Search:' id='68368' class=Static [47x20] {LegacyIAccessible}
+                      Pane id='133906' class=SWT_Window0 [150x26] {LegacyIAccessible}
+                        Edit id='68422' class=Edit [124x22] {Value,LegacyIAccessible}
+                        Text [198x22] {LegacyIAccessible}
+                        Button name='Open' id='DropDown' [19x26] {Invoke,LegacyIAccessible}
+                        Text name='Consultant' id='68442' class=Static [70x20] {LegacyIAccessible}
+                        Edit name='Consultant' id='68444' class=Edit [213x26] {Value,LegacyIAccessible}
+                        Text name='VAT' id='68474' class=Static [25x20] {LegacyIAccessible}
+                        ComboBox name='VAT' id='68476' class=ComboBox [213x28] {Value,ExpandCollapse,LegacyIAccessible}
+                        ToolBar id='68482' class=ToolbarWindow32 [294x59] {LegacyIAccessible}
+                        Text name='Addresses' id='68486' class=Static [67x20] {LegacyIAccessible}
+                        Image id='68488' class=Static [20x20] {LegacyIAccessible}
+                        Image id='68490' class=Static [20x20] {LegacyIAccessible}
+                        Edit id='68496' class=Edit [375x51] {Value,LegacyIAccessible}
+                        TabItem name='Invoice address' [136x24] {SelectionItem,LegacyIAccessible}
+                        ScrollBar name='Horizontal' id='NonClientHorizontalScrollBar' [1099x21] {LegacyIAccessible}
+                        ScrollBar name='Vertical' id='NonClientVerticalScrollBar' [21x148] {LegacyIAccessible}
+                        Edit name='Shipping' id='1001' class=Edit [334x22] {Value,LegacyIAccessible}
+                        Button name='Open' id='DropDown' [19x26] {Invoke,LegacyIAccessible}
+                        Edit id='133908' class=Edit [150x26] {Value,LegacyIAccessible}
+                          Text name='VAT' [186x22] {LegacyIAccessible}
+                          Button name='Open' id='DropDown' [19x26] {Invoke,LegacyIAccessible}
+                          Button name='Confirmation' [98x59] {Invoke,LegacyIAccessible}
+                          Button name='Invoice' [58x59] {Invoke,LegacyIAccessible}
+                          Button name='Delivery' [65x59] {Invoke,LegacyIAccessible}
+                          Button name='Proforma' [73x59] {Invoke,LegacyIAccessible}
+                          ScrollBar name='Vertical' id='NonClientVerticalScrollBar' [21x47] {LegacyIAccessible}
+                          Button name='Column left' id='UpButton' [21x21] {Invoke,LegacyIAccessible}
+                          Thumb name='Position' id='ScrollbarThumb' [986x21] {LegacyIAccessible}
+                          Button name='Page right' id='DownPageButton' [71x21] {Invoke,LegacyIAccessible}
+                          Button name='Column right' id='DownButton' [21x21] {Invoke,LegacyIAccessible}
+                          Button name='Line up' id='UpButton' [21x21] {Invoke,LegacyIAccessible}
+                          Button name='Line down' id='DownButton' [21x21] {Invoke,LegacyIAccessible}
+                          Image id='512' class=Static [20x22] {LegacyIAccessible}
+                            Button name='Line up' id='UpButton' [21x21] {Invoke,LegacyIAccessible}
+                            Button name='Line down' id='DownButton' [21x21] {Invoke,LegacyIAccessible}
