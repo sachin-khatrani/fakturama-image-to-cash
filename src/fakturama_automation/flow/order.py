@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+
+from typing import Optional
 
 from ..errors import DuplicateDocument, ManualReviewRequired
 from ..models import OrderDocument
@@ -169,14 +171,42 @@ def _confirm_shipping_is_free(session: Session) -> None:
 
 
 def _loose_match(actual: str, expected: str) -> bool:
-    a, b = str(actual).strip().casefold(), str(expected).strip().casefold()
+    """Compare a field's displayed value with what the source says it should be.
+
+    Numbers are compared *numerically*, not as text. Both sides are the same
+    quantity rendered by different code — the flow types '2' into Qty. while this
+    check derives '2.00' from the model — so a string comparison reports every
+    correct line as a mismatch. That turned the step 4.1 re-confirmation into a
+    guaranteed false halt on every run.
+    """
+    a, b = str(actual).strip(), str(expected).strip()
     if not a:
         return True  # column not rendered; already logged
-    if b in a:
+    if b.casefold() in a.casefold():
         return True
-    a_digits = "".join(ch for ch in a if ch.isdigit())
-    b_digits = "".join(ch for ch in b if ch.isdigit())
-    return bool(b_digits) and (a_digits == b_digits or a_digits.lstrip("0") == b_digits.lstrip("0"))
+    number_a, number_b = _to_decimal(a), _to_decimal(b)
+    if number_a is not None and number_b is not None:
+        return number_a == number_b
+    return False
+
+
+def _to_decimal(text: str) -> Optional[Decimal]:
+    """Parse a displayed number, tolerating currency marks, % and a decimal comma."""
+    cleaned = "".join(ch for ch in str(text) if ch.isdigit() or ch in ",.-")
+    if not cleaned or not any(ch.isdigit() for ch in cleaned):
+        return None
+    if "," in cleaned and "." in cleaned:
+        cleaned = (
+            cleaned.replace(".", "").replace(",", ".")
+            if cleaned.rfind(",") > cleaned.rfind(".")
+            else cleaned.replace(",", "")
+        )
+    elif "," in cleaned:
+        cleaned = cleaned.replace(",", ".")
+    try:
+        return Decimal(cleaned)
+    except (InvalidOperation, ValueError):
+        return None
 
 
 def _confirm_totals(session: Session, doc: OrderDocument) -> None:
