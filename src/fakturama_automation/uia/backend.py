@@ -32,6 +32,30 @@ log = logging.getLogger(__name__)
 
 FAKTURAMA_WINDOW_HINT = "Fakturama"
 
+# Processes that are never the target application. A title-only match happily
+# selects a browser showing this project's own repository page.
+NEVER_FAKTURAMA = frozenset(
+    {
+        "chrome.exe", "msedge.exe", "firefox.exe", "opera.exe", "brave.exe",
+        "code.exe", "devenv.exe", "notepad.exe", "notepad++.exe", "sublime_text.exe",
+        "explorer.exe", "windowsterminal.exe", "cmd.exe", "powershell.exe", "pwsh.exe",
+        "outlook.exe", "teams.exe", "slack.exe", "python.exe", "pythonw.exe",
+    }
+)
+
+# Fakturama is an Eclipse RCP application; some installs launch it via the JVM.
+JVM_PROCESSES = frozenset({"java.exe", "javaw.exe"})
+
+
+def _process_name(control: auto.Control) -> str:
+    """Lower-cased executable name of the process owning a window, or ''."""
+    try:
+        import psutil
+
+        return psutil.Process(control.ProcessId).name().casefold()
+    except Exception:  # noqa: BLE001 - psutil missing, or access denied
+        return ""
+
 
 @dataclass
 class Screenshotter:
@@ -118,11 +142,12 @@ class Session:
         screenshotter: Screenshotter,
         window_hint: str = FAKTURAMA_WINDOW_HINT,
         timeout: float = 30.0,
+        allow_any_process: bool = False,
     ) -> "Session":
         """Attach to an already-running Fakturama."""
         window = wait_for(
-            lambda: cls._find_window(window_hint),
-            f"a top-level window whose title contains {window_hint!r}",
+            lambda: cls._find_window(window_hint, allow_any_process),
+            f"a Fakturama window whose title contains {window_hint!r}",
             timeout,
         )
         window.SetActive()
@@ -136,6 +161,7 @@ class Session:
         screenshotter: Screenshotter,
         window_hint: str = FAKTURAMA_WINDOW_HINT,
         timeout: float = 180.0,
+        allow_any_process: bool = False,
     ) -> "Session":
         """Start Fakturama and wait for its shell window.
 
@@ -146,19 +172,61 @@ class Session:
             raise AutomationError(f"Fakturama executable not found: {executable}")
         log.info("launching %s", executable)
         subprocess.Popen([str(executable)], cwd=str(executable.parent))
-        return cls.attach(screenshotter, window_hint, timeout)
+        return cls.attach(screenshotter, window_hint, timeout, allow_any_process)
 
     @staticmethod
-    def _find_window(hint: str) -> Optional[auto.WindowControl]:
-        root = auto.GetRootControl()
-        for child in root.GetChildren():
+    def _find_window(hint: str, allow_any_process: bool = False) -> Optional[auto.WindowControl]:
+        """Find Fakturama's shell window — by application, not just by title.
+
+        Matching on the title alone is actively dangerous. A browser tab, editor
+        or terminal whose title merely mentions Fakturama matches the substring,
+        and the automation would then start typing into it. That is not
+        hypothetical: with this project's own GitHub page open, a title-only
+        match selected Google Chrome.
+
+        So a title match is only a candidate. The window is accepted when the
+        process behind it looks like the application (its executable names
+        Fakturama, or it is the JVM that Fakturama runs on), and is rejected
+        outright when the process is one that is never Fakturama.
+        """
+        candidates: list[tuple[int, auto.WindowControl, str]] = []
+        for child in auto.GetRootControl().GetChildren():
             try:
+                if child.ControlTypeName != "WindowControl":
+                    continue
                 name = child.Name or ""
             except Exception:  # noqa: BLE001
                 continue
-            if hint.casefold() in name.casefold() and child.ControlTypeName == "WindowControl":
-                return child
-        return None
+            if hint.casefold() not in name.casefold():
+                continue
+
+            process = _process_name(child)
+            if not allow_any_process and process and process in NEVER_FAKTURAMA:
+                log.debug("ignoring %r — it belongs to %s, which is never Fakturama", name, process)
+                continue
+
+            if process and "fakturama" in process:
+                score = 0  # the application itself
+            elif process in JVM_PROCESSES:
+                score = 1  # Fakturama running under a JVM launcher
+            elif allow_any_process:
+                score = 2
+            else:
+                log.warning(
+                    "window %r matches the title but belongs to %r, which does not look "
+                    "like Fakturama — ignoring it (use --allow-any-process to override)",
+                    name,
+                    process or "an unknown process",
+                )
+                continue
+            candidates.append((score, child, process or "?"))
+
+        if not candidates:
+            return None
+        candidates.sort(key=lambda item: item[0])
+        score, window, process = candidates[0]
+        log.info("selected window %r from process %s", window.Name, process)
+        return window
 
     # ------------------------------------------------------------- diagnostics
 

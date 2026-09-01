@@ -27,8 +27,10 @@ The locator catalogue is written from the specification's labels and screenshots
 Requires Windows (UI Automation) and Python 3.10+.
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -e ".[llm,ocr,dev]"
 ```
+
+That puts the package on the path and installs a `fakturama-automation` command. `pip install -r requirements.txt` also works, but then run the commands below with `PYTHONPATH=src`.
 
 Install Fakturama from https://www.fakturama.info/download/ and run it once to create a database profile.
 
@@ -58,7 +60,9 @@ Launching Fakturama first, replaying a saved transcription so no API call is mad
 python -m fakturama_automation assets/order-image.png --extractor fixture --fixture tests/fixtures/order-image.json --launch --exe "C:\Program Files\Fakturama2\Fakturama.exe"
 ```
 
-Useful flags: `--save-extraction out.json` (capture a transcription for replay), `--allow-duplicate` (skip the already-booked check), `--artifacts DIR`, `-v`.
+Useful flags: `--save-extraction out.json` (capture a transcription for replay), `--allow-duplicate` (skip the already-booked check), `--allow-any-process` (accept a title match from a process that does not look like Fakturama — see below), `--artifacts DIR`, `-v`.
+
+**Which window it attaches to.** A title-only match is not enough: any browser tab or editor whose title mentions Fakturama matches the substring, and the automation would type into it. So the process behind the window must also look like the application — its executable names Fakturama, or it is the JVM Fakturama runs on. Browsers, editors and terminals are refused outright. `--allow-any-process` overrides this if your install is unusual.
 
 Exit codes are meaningful — `0` success, `2` stopped for manual review, `1` a defect. A supervising process can tell "a human must look at this" from "this is broken" without parsing the log.
 

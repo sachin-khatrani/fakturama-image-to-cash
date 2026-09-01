@@ -59,6 +59,12 @@ def build_parser() -> argparse.ArgumentParser:
     target.add_argument(
         "--window", default="Fakturama", help="substring of the main window title (default: Fakturama)"
     )
+    target.add_argument(
+        "--allow-any-process",
+        action="store_true",
+        help="accept a title match even when the owning process does not look like Fakturama "
+        "(off by default: a title-only match can select a browser showing this repo)",
+    )
 
     run = parser.add_argument_group("run")
     run.add_argument(
@@ -157,9 +163,13 @@ def main(argv: Optional[list[str]] = None) -> int:
                     "or install from https://www.fakturama.info/download/"
                 )
                 return EXIT_ERROR
-            session = Session.launch(executable, shots, window_hint=args.window)
+            session = Session.launch(
+                executable, shots, window_hint=args.window, allow_any_process=args.allow_any_process
+            )
         else:
-            session = Session.attach(shots, window_hint=args.window)
+            session = Session.attach(
+                shots, window_hint=args.window, allow_any_process=args.allow_any_process
+            )
 
         run_flow(session, doc, skip_duplicate_check=args.allow_duplicate)
     except ManualReviewRequired as exc:
