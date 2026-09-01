@@ -14,9 +14,17 @@ What that does and does not mean:
 
 | | |
 |---|---|
-| **Verified by running it** | Extraction, the reconciliation gate, and all derived values (27 tests). The grounding ladder — every rung — against a live Win32 form, including the write/read-back cycle, combo selection, and the upper-vs-lower icon case. The screenshot annotator (see [`docs/annotation-mechanism-example.png`](docs/annotation-mechanism-example.png)). |
-| **Written but not executed** | The flow layer (steps 1–5) and the locator catalogue in [`flow/ui.py`](src/fakturama_automation/flow/ui.py). |
-| **Deliberately not guessed** | Whether the Items table is element-addressable or canvas-rendered. The grid driver probes it at runtime and picks a strategy; the inspector answers it in one command. |
+| **Verified by running it** | Extraction, the reconciliation gate, and all derived values. The grounding ladder — every rung — against a live Win32 form, including the write/read-back cycle, combo selection, and the upper-vs-lower icon case. The screenshot annotator (see [`docs/annotation-mechanism-example.png`](docs/annotation-mechanism-example.png)). **The flow itself (steps 1–5), executed end to end against a simulated UI** — see below. 55 tests. |
+| **Not executed against Fakturama** | The locator catalogue in [`flow/ui.py`](src/fakturama_automation/flow/ui.py) — whether these labels match the widget names Fakturama publishes. That is the one thing the simulation cannot answer, and the inspector answers it in one command. |
+| **Deliberately not guessed** | Whether the Items table is element-addressable or canvas-rendered. The grid driver probes it at runtime and picks a strategy; the inspector reports it. |
+
+### The flow runs, against a simulation
+
+`tests/fake_ui.py` stands in for a `Session`: it records every interaction and answers reads the way Fakturama would. `tests/test_flow.py` drives the real `run_flow` against it, covering **both halves of every resolve-or-create branch** — the empty database where records must be created, and the populated one where they must be found and reused. The second half had never executed at all.
+
+What it pins down is the orderings that are load-bearing rather than cosmetic: the Order is opened before any master data is touched; the selector is searched before anything is created; a created record is re-searched rather than assumed saved; the VAT record exists before the Product editor opens; the Invoice comes from the follow-up action, not the toolbar; Save is clicked once per record. Plus every stop-for-manual-review path.
+
+It found a blocking defect on its first run — see below. It cannot tell you the locators are right; only the inspector against a live install can.
 
 The locator catalogue is written from the specification's labels and screenshots. Rather than present those as confirmed, the repo ships the tool that confirms them — see [First run](#first-run) below. Guessing a control name and guessing a screen coordinate are the same mistake, and the same tool fixes both.
 
@@ -164,11 +172,17 @@ Worth recording, because each was a silent-wrong-answer bug rather than a crash:
 - **A write could land on top of residual text**, producing `haBerlin` — plausible at a glance, wrong in the record. Writes now retry once from a verified-empty field.
 - **Proximity search pulled in a combo's own drop-down button**, tripping the sibling-count guard on the upper/lower icon pair. Sub-parts of composite widgets are now excluded.
 
+And from verifying a clean clone, then simulating the flow:
+
+- **Every documented command was broken.** A `src/` layout with no packaging meant a fresh clone answered `ModuleNotFoundError` to every command in this file. Fixed with `pyproject.toml` and a console script.
+- **`--attach` selected Google Chrome.** Window matching was title-substring only, so a browser tab showing this repository matched "Fakturama" — the automation would have typed an order into it. Window selection now identifies the process behind the window. Nine regression tests pin it. The inspector had the same flaw and dumped 281 elements of Chrome's widget tree, which is worse than failing: locators written from it would look researched.
+- **Step 4.1 would have halted every run.** The re-confirmation compared `"2"` (what the flow types into Qty.) against `"2.00"` (how it re-derives the expectation), so a correct line read as a mismatch and every run stopped for manual review. Numbers are now compared numerically.
+
 ---
 
 ## Known gaps
 
-- **Not run against Fakturama.** See [Status](#status-stated-plainly). The locator catalogue needs one pass with the inspector.
+- **Not run against Fakturama.** See [Status](#status-stated-plainly). The locator catalogue needs one pass with the inspector. The Fakturama installer requires elevation, which a non-interactive session cannot grant, so the install is a manual step.
 - **The sample's delivery address differs from its billing address.** The specification's step 2.8 covers only the identical case ("if billing and delivery are identical, also assign the Delivery address role"). The supplied image has a separate warehouse address, so a second address record is required. That branch is implemented (`debtor._add_delivery_address`) but it is an interpretation of a case the written procedure does not cover, and it is the first thing I would confirm.
 - **Canvas-mode item lines need Tesseract.** If the grid turns out to be canvas-rendered and OCR is unavailable, the run stops for manual review rather than writing item lines it cannot verify.
 - **Order-level discount and shipping** are held at 0 / free and confirmed, per step 4.2. Nothing *reads* order-level values from the image, because the sample supplies none — an image that did carry them would need extraction-schema fields added.
@@ -182,7 +196,7 @@ Worth recording, because each was a silent-wrong-answer bug rather than a crash:
 
 In this order:
 
-1. **Install Fakturama and do the inspector pass.** Everything unverified above becomes verified or corrected, and this is the only work that cannot be done any other way. I would expect several labels in `flow/ui.py` to be wrong, and the ladder is built so that fixing them touches one file.
+1. **Install Fakturama and do the inspector pass.** This is now the *only* remaining unknown, and the only work that cannot be done any other way. I would expect several labels in `flow/ui.py` to be wrong; the ladder is built so that fixing them touches one file.
 2. **Settle the item grid.** `--probe-grid` answers it in seconds. If it is NatTable-style canvas, the keyboard-plus-OCR path becomes the primary one and needs real tuning — column order, commit key, and how the grid signals a rejected value. This is the largest remaining unknown by a wide margin.
 3. **Run the flow end to end against an empty profile and fix what breaks**, then run it a second time against the now-populated profile. The second run exercises the *other* half of every resolve-or-create branch — the paths that select rather than create — and those are the ones that have never executed at all.
 4. **Turn the run into a regression test.** A disposable Fakturama profile, seeded empty, plus a golden-image suite for extraction that runs in CI without a UI.
