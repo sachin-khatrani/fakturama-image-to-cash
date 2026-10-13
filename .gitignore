@@ -9,3 +9,8 @@ artifacts/
 .pytest_cache/
 .idea/
 .vscode/
+
+# build output from an editable install
+*.egg-info/
+build/
+dist/
