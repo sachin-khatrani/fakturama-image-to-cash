@@ -116,10 +116,31 @@ def summarise(doc: OrderDocument) -> str:
     return "\n".join(lines)
 
 
+def _load_env() -> None:
+    """Read a .env file if one is present.
+
+    The README tells you to put ANTHROPIC_API_KEY and TESSERACT_CMD in .env, and
+    python-dotenv is a declared dependency — but nothing actually loaded the file,
+    so a correctly-filled .env was silently ignored and the LLM extractor failed
+    with "no API key" while the key sat right there. Values already set in the
+    real environment win, so an explicit export still overrides the file.
+    """
+    try:
+        from dotenv import load_dotenv
+    except ImportError:  # pragma: no cover - optional at runtime
+        return
+    for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parents[2] / ".env"):
+        if candidate.is_file():
+            load_dotenv(candidate, override=False)
+            log.debug("loaded environment from %s", candidate)
+            return
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     artifacts = args.artifacts
     configure_logging(artifacts, verbose=args.verbose)
+    _load_env()
 
     if not args.image.is_file():
         log.error("image not found: %s", args.image)
