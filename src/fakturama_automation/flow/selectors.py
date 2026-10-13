@@ -97,9 +97,46 @@ class SelectorDialog:
             table = self.session.resolver.try_resolve(locator)
             if table is not None:
                 break
-        if table is None:
+        if table is not None:
+            return read_rows(table)
+
+        # The selector dialogs contain no Table or List control at all -- only
+        # Panes -- so there was nothing to hand to read_rows and it returned
+        # empty for every search. That made the existence check report "no
+        # match" for records that plainly existed, which drove the flow into the
+        # create branch and triggered Fakturama's own duplicate warning.
+        pane = self._result_pane()
+        if pane is None:
             return []
-        return read_rows(table)
+        from ..uia.ocr_rows import OCRCaptureBlocked
+
+        try:
+            return read_rows(pane)
+        except OCRCaptureBlocked as exc:
+            raise ManualReviewRequired(self.title, str(exc)) from exc
+
+    def _result_pane(self) -> Optional[auto.Control]:
+        """The innermost pane holding the result rows.
+
+        Chosen as the smallest pane still large enough to be the list: the outer
+        panes are the dialog frame and include the title bar and search box,
+        whose text would otherwise be read back as result rows.
+        """
+        best = None
+        best_area = None
+        for control in descendants(self.window, 10):
+            try:
+                if (control.ControlTypeName or "").replace("Control", "") != "Pane":
+                    continue
+                rect = control.BoundingRectangle
+            except Exception:  # noqa: BLE001
+                continue
+            if rect is None or rect.width() < 200 or rect.height() < 100:
+                continue
+            area = rect.width() * rect.height()
+            if best_area is None or area < best_area:
+                best, best_area = control, area
+        return best
 
     # ------------------------------------------------------------------ actions
 

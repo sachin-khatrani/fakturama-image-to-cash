@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import logging
 import os
+import time
+from pathlib import Path
 from typing import Optional
 
 import uiautomation as auto
@@ -35,11 +37,37 @@ log = logging.getLogger(__name__)
 MIN_ROW_CHARS = 3
 
 
+class OCRCaptureBlocked(RuntimeError):
+    """The window could not be captured, so an empty read means nothing."""
+
+
+def _window_is_visible(control: auto.Control) -> bool:
+    """Bring the owning window forward and report whether it can be captured."""
+    try:
+        top = control.GetTopLevelControl()
+        if top is None:
+            return False
+        if top.IsMinimize():
+            top.Restore()
+        top.SetActive()
+        time.sleep(0.25)
+        rect = _rect(top)
+        if rect is None or rect.width() < 100 or rect.height() < 100:
+            return False
+        # A locked desktop reports no foreground window of our own.
+        foreground = auto.GetForegroundControl()
+        if foreground is None:
+            return False
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def ocr_available() -> bool:
     """Whether OCR row reading can be used at all."""
     try:
         import pytesseract  # noqa: F401
-        from PIL import ImageGrab  # noqa: F401
+        from PIL import Image  # noqa: F401
     except ImportError:
         return False
     return _configure() is not None
@@ -70,13 +98,46 @@ def read_text_rows(control: auto.Control) -> list[str]:
         return []
 
     import pytesseract
-    from PIL import ImageGrab
+    from PIL import Image
 
+    # Capture the CONTROL, not the screen region it happens to occupy.
+    # ImageGrab.grab(bbox=...) reads whatever pixels are on screen at those
+    # coordinates, so anything overlapping the window -- a browser, an editor,
+    # another dialog -- gets OCR'd instead, silently, and the rows come back
+    # wrong rather than missing. CaptureToImage asks the control for its own
+    # pixels and works while it is partly or fully occluded.
+    import tempfile
+
+    # Both ImageGrab and CaptureToImage read the SCREEN, not the window's own
+    # backing store -- so a locked session, a minimised window or anything
+    # overlapping it produces a capture of something else entirely. That fails
+    # silently: OCR returns no rows, the existence check reads it as "no match",
+    # and the flow creates a duplicate. Bring the window forward first, and if it
+    # still cannot be seen, say so instead of returning an empty list that the
+    # caller cannot distinguish from a genuinely empty list.
+    if not _window_is_visible(control):
+        raise OCRCaptureBlocked(
+            "the Fakturama window is not visible on screen (locked session, "
+            "minimised, or covered by another window), so its lists cannot be "
+            "read by OCR. Row reading needs an interactive, unlocked desktop "
+            "with the window in front."
+        )
+
+    path = Path(tempfile.gettempdir()) / f"fakturama-list-{os.getpid()}.png"
     try:
-        image = ImageGrab.grab(bbox=(rect.left, rect.top, rect.right, rect.bottom))
-    except Exception as exc:  # noqa: BLE001 - screen capture can fail transiently
-        log.debug("could not capture the list rectangle: %s", exc)
+        if not control.CaptureToImage(str(path)):
+            log.debug("the control refused to capture itself")
+            return []
+        with Image.open(path) as source:
+            image = source.convert("RGB")
+    except Exception as exc:  # noqa: BLE001 - capture can fail transiently
+        log.debug("could not capture the list control: %s", exc)
         return []
+    finally:
+        try:
+            path.unlink(missing_ok=True)
+        except Exception:  # noqa: BLE001
+            pass
 
     try:
         # --psm 6 reads a uniform block line by line, which is what a table is.
