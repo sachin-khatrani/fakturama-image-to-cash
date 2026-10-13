@@ -15,8 +15,8 @@ What that does and does not mean:
 | | |
 |---|---|
 | **Verified by running it** | Extraction, the reconciliation gate, and all derived values. The grounding ladder — every rung — against a live Win32 form, including the write/read-back cycle, combo selection, and the upper-vs-lower icon case. The screenshot annotator (see [`docs/annotation-mechanism-example.png`](docs/annotation-mechanism-example.png)). **The flow itself (steps 1–5), executed end to end against a simulated UI** — see below. 55 tests. |
-| **Confirmed against Fakturama 2.2.0** | The locator catalogue — every locator above was resolved against the running application and corrected where wrong (see below). Steps 1.3–1.7 were executed for real: New Order opened, Cust.Ref. written and read back, price mode changed Gross → Net, VAT mode confirmed. |
-| **Still not executed against Fakturama** | Steps 2–5 end to end. The item grid is canvas-rendered (confirmed), so item lines need OCR, and Tesseract is not installed here. |
+| **Executed against Fakturama 2.2.0** | Step 1 complete (Order opened, date and Cust.Ref. written, price mode set Gross → Net, VAT mode confirmed). Step 2 through 2.11: the address selector is searched, the Debtor is created with company, names, salutation, main address and address role, and the payment method is created with the correct Fakturama code (`Bank Transfer` → `Credit transfer`) and selected back on the Debtor. All three extraction backends run for real. |
+| **Not yet working** | Writing the *second* address (the sample's delivery address differs from billing): the `additional address #1` tab is created and selected, but the ZIP field does not accept the value. Steps 3–5 are therefore not reached. |
 | **Deliberately not guessed** | Whether the Items table is element-addressable or canvas-rendered. The grid driver probes it at runtime and picks a strategy; the inspector reports it. |
 
 ### The flow runs, against a simulation
@@ -183,7 +183,8 @@ And from verifying a clean clone, then simulating the flow:
 
 ## Known gaps
 
-- **Steps 2–5 have not been run end to end** against Fakturama. Steps 1.3–1.7 have. The blocker is the item grid: it is canvas-rendered, so line values can only be verified by OCR, and Tesseract is not installed here — the grid driver halts rather than writing item lines it cannot verify.
+- **The flow stops part-way through step 2.** It gets as far as adding the Debtor's second address and halts for manual review there, rather than saving a half-correct record. Steps 3–5 have not been reached against the real application, though they are covered by the simulation.
+- **Every data view in Fakturama is canvas-rendered**, not just the item grid — the Documents, VAT and terms-of-payment lists too. Rows are recovered by OCR of the control's own reported rectangle. An empty list result is trusted only when OCR is usable, so "no match" stays distinguishable from "could not see"; otherwise the flow stops rather than creating a duplicate on every run.
 - **The sample's delivery address differs from its billing address.** The specification's step 2.8 covers only the identical case ("if billing and delivery are identical, also assign the Delivery address role"). The supplied image has a separate warehouse address, so a second address record is required. That branch is implemented (`debtor._add_delivery_address`) but it is an interpretation of a case the written procedure does not cover, and it is the first thing I would confirm.
 - **The item grid IS canvas-rendered — confirmed, not hypothetical.** `--probe-grid` reports every candidate as `SWT_Window0` panes carrying only `LegacyIAccessible`: no Grid/Table pattern, no cell elements, no column headers. The keyboard-plus-OCR path is therefore the required one, not a fallback, and it needs Tesseract installed.
 - **Order-level discount and shipping** are held at 0 / free and confirmed, per step 4.2. Nothing *reads* order-level values from the image, because the sample supplies none — an image that did carry them would need extraction-schema fields added.
