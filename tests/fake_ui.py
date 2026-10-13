@@ -98,6 +98,8 @@ class FakeSession:
         self.open_editor = "none"
         self.grid = FakeGrid(doc=doc)
         self.shots: list[str] = []
+        # the fake exposes real row objects, unlike the live canvas lists
+        self.rows_readable = True
 
         # Which master records already exist in this fake database.
         existing = existing or {}
@@ -176,7 +178,7 @@ class FakeSession:
                     "the VAT dropdown would not contain it"
                 )
             self.open_editor = "product"
-        elif loc is ui.LIST_NEW_ICON:
+        elif loc in (ui.LIST_NEW_PAYMENT, ui.LIST_NEW_VAT):
             self.open_editor = f"new-{self._current_list}"
         elif loc is ui.TOOLBAR_SAVE:
             self.saves.append(self.open_editor)

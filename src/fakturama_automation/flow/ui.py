@@ -214,9 +214,13 @@ DEBTOR_PAYMENT_METHOD = Locator("Debtor payment method", control_type="ComboBox"
 # payment-method (terms of payment) editor
 # --------------------------------------------------------------------------- #
 
-LIST_NEW_ICON = Locator(
-    "green + at the upper-right of the list", control_type="Button", name="New", name_contains=True
+# Per-list exact names. A substring locator for "New" matched EIGHT toolbar
+# buttons, most of them unrelated ('Create: New Invoice', 'Create a new
+# product'), so the ordinal was a coin flip.
+LIST_NEW_PAYMENT = Locator(
+    "create a new term of payment", control_type="Button", name="Create a new term of payment"
 )
+LIST_NEW_VAT = Locator("create a new VAT", control_type="Button", name="Create a new VAT")
 LIST_SEARCH = Locator("list search box", control_type="Edit", label="Search", label_side="right")
 
 PAYMENT_NAME = Locator("payment Name", control_type="Edit", label="Name")

@@ -198,6 +198,26 @@ def resolve_or_create(
             screenshot=str(shot) if shot else None,
         )
 
+    if not rows:
+        # Nothing at all came back. On Fakturama that is ambiguous in a way that
+        # matters: every data view is canvas-rendered, so a list that cannot be
+        # read looks exactly like a list that is genuinely empty. Taking the
+        # create branch on a blind read silently duplicates master data on every
+        # rerun -- precisely the guessing this flow refuses to do everywhere
+        # else. An empty result is only trusted when the reader is known to work.
+        if not _rows_are_readable(session):
+            shot = session.shot(f"{step}-unreadable-list")
+            dialog.cancel()
+            raise ManualReviewRequired(
+                step,
+                f"the {entity} selector returned no rows, but its list is canvas-rendered "
+                "and could not be read -- 'no match' cannot be distinguished from "
+                "'could not see'. Creating the record here would duplicate it on every run. "
+                "Install Tesseract and enable OCR row reading, or confirm the list by hand.",
+                expected=search_term,
+                screenshot=str(shot) if shot else None,
+            )
+
     log.info("%s: no exact %s for %r, creating it", step, entity, search_term)
     dialog.cancel()
     create()
@@ -217,6 +237,15 @@ def resolve_or_create(
         )
     dialog.select(matches[0])
     log.info("%s: created and selected %s %r", step, entity, search_term)
+
+
+def _rows_are_readable(session: Session) -> bool:
+    """Whether row elements can be read from this application's lists at all.
+
+    Set once per run by probing a list view. Fakturama renders every data view
+    on a canvas, so this is currently False and the honest answer is to stop.
+    """
+    return getattr(session, "rows_readable", False)
 
 
 def find_list_row(session: Session, table_locator: Locator, required: list[str]) -> Optional[Row]:

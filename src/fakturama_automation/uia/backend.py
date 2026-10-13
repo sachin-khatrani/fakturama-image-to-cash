@@ -133,6 +133,9 @@ class Session:
         self.window = window
         self.resolver = Resolver(window)
         self.shots = screenshotter
+        # Set by probing a list view. Fakturama renders data views on a canvas,
+        # so rows are not element-addressable and an empty read is meaningless.
+        self.rows_readable = False
 
     # ---------------------------------------------------------------- lifecycle
 

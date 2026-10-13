@@ -128,7 +128,7 @@ def _ensure_vat(session: Session, item: LineItem) -> None:
         _confirm_existing_vat(session, candidates[0], item)  # 3.5
         return
 
-    session.click(ui.LIST_NEW_ICON)  # 3.6
+    session.click(ui.LIST_NEW_VAT)  # 3.6
     session.invalidate()
     session.set_text(ui.VAT_NAME, item.vat_name)
     session.set_text(ui.VAT_DESCRIPTION, item.vat_name)

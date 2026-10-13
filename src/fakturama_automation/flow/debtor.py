@@ -286,7 +286,7 @@ def _create_payment_method(session: Session, method: PaymentMethod) -> None:
             screenshot=str(shot) if shot else None,
         )
 
-    session.click(ui.LIST_NEW_ICON)  # 2.10.2 — the green +
+    session.click(ui.LIST_NEW_PAYMENT)  # 2.10.2
     session.invalidate()
 
     session.set_text(ui.PAYMENT_NAME, method.value)  # 2.10.3
