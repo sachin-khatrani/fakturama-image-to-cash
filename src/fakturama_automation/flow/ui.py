@@ -188,12 +188,13 @@ ADDR_COUNTRY = Locator("address Country", control_type="ComboBox", label="Countr
 ADDR_EMAIL = Locator("address E-Mail", control_type="Edit", label="E-Mail")
 ADDR_PHONE = Locator("address Telephone", control_type="Edit", label="Telephone")
 
-ROLE_INVOICE_ADDRESS = Locator(
-    "Invoice address role", control_type="CheckBox", name="Invoice address", name_contains=True
+# The address role is not a pair of checkboxes -- the editor has none at all.
+# It is a single "address type" field that accepts the role names as text.
+ADDRESS_TYPE = Locator(
+    "address type", control_type="Edit", label="address type", label_side="right", radius=320
 )
-ROLE_DELIVERY_ADDRESS = Locator(
-    "Delivery address role", control_type="CheckBox", name="Delivery address", name_contains=True
-)
+ROLE_INVOICE = "Invoice address"
+ROLE_DELIVERY = "Delivery address"
 
 MISC_ALIAS = Locator("Alias name", control_type="Edit", label="Alias name")
 MISC_DISCOUNT = Locator("Debtor Discount", control_type="Edit", label="Discount")

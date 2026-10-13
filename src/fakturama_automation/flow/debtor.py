@@ -156,16 +156,14 @@ def _fill_main_address(session: Session, debtor: Debtor) -> None:
     if debtor.phone:
         session.set_text(ui.ADDR_PHONE, debtor.phone)
 
-    _set_checkbox(session, ui.ROLE_INVOICE_ADDRESS, True)
-
     if debtor.delivery_equals_billing:
         # 2.8 — same address, both roles, one record. Do not create a second one.
-        _set_checkbox(session, ui.ROLE_DELIVERY_ADDRESS, True)
+        _set_address_type(session, [ui.ROLE_INVOICE, ui.ROLE_DELIVERY])
         log.info("%s: billing and delivery are identical; main address carries both roles", STEP)
     else:
-        # The source gives a distinct delivery address, so the main address must
-        # NOT claim the delivery role — a second address record is required.
-        _set_checkbox(session, ui.ROLE_DELIVERY_ADDRESS, False)
+        # The source gives a distinct delivery address, so the main address takes
+        # only the invoice role and a second address record is required.
+        _set_address_type(session, [ui.ROLE_INVOICE])
         _add_delivery_address(session, debtor)
 
     session.shot(f"{STEP}-main-address")
@@ -186,8 +184,7 @@ def _add_delivery_address(session: Session, debtor: Debtor) -> None:
         session.set_text(ui.ADDR_ZIP, delivery.zip)
         session.set_text(ui.ADDR_CITY, delivery.city)
         session.select_option(ui.ADDR_COUNTRY, delivery.country)
-        _set_checkbox(session, ui.ROLE_DELIVERY_ADDRESS, True)
-        _set_checkbox(session, ui.ROLE_INVOICE_ADDRESS, False)
+        _set_address_type(session, [ui.ROLE_DELIVERY])
         log.info("%s: added a separate delivery address", STEP)
     except Exception as exc:  # noqa: BLE001
         shot = session.shot(f"{STEP}-delivery-address-failed")
@@ -208,6 +205,16 @@ def _fill_miscellaneous(session: Session, debtor: Debtor) -> None:
         session.set_text(ui.MISC_ALIAS, debtor.alias)
     session.set_text(ui.MISC_DISCOUNT, "0")
     session.select_option(ui.MISC_NET_GROSS, "Net")
+
+
+def _set_address_type(session: Session, roles: list[str]) -> None:
+    """Spec 2.8 — assign the address its role(s).
+
+    The editor has no role checkboxes; it has one "address type" field that
+    takes the role names as text. Written and read back like any other field.
+    """
+    session.set_text(ui.ADDRESS_TYPE, ", ".join(roles))
+    log.info("%s: address type set to %s", STEP, ", ".join(roles))
 
 
 def _set_checkbox(session: Session, locator, checked: bool) -> None:
