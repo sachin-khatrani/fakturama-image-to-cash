@@ -179,7 +179,7 @@ def _add_delivery_address(session: Session, debtor: Debtor) -> None:
     """
     delivery = debtor.delivery_address
     try:
-        session.click(ui.ADDRESS_NEW_ICON)
+        session.click(ui.DEBTOR_ADD_ADDRESS)
         session.set_text(ui.ADDR_STREET, delivery.street)
         session.set_text(ui.ADDR_ZIP, delivery.zip)
         session.set_text(ui.ADDR_CITY, delivery.city)

@@ -172,7 +172,10 @@ DEBTOR_SALUTATION = Locator(
 
 TAB_ADDRESSES = Locator("Addresses tab", control_type="TabItem", name="Addresses")
 TAB_MISCELLANEOUS = Locator("Miscellaneous tab", control_type="TabItem", name="Miscellaneous")
-TAB_PAYMENT = Locator("Payment tab", control_type="TabItem", name="Payment")
+# There is no Payment tab: Alias name, Payment, Discount and Net/Gross all live
+# on Miscellaneous. Spec 2.9 and 2.10 describe them as separate steps, but they
+# are the same tab.
+TAB_PAYMENT = Locator("Miscellaneous tab (holds Payment)", control_type="TabItem", name="Miscellaneous")
 
 ADDR_STREET = Locator("address Street", control_type="Edit", label="Street")
 # Same shape as the name pair: one label "ZIP - City" over two unnamed edits.
@@ -190,6 +193,11 @@ ADDR_PHONE = Locator("address Telephone", control_type="Edit", label="Telephone"
 
 # The address role is not a pair of checkboxes -- the editor has none at all.
 # It is a single "address type" field that accepts the role names as text.
+# Adding a second address inside the DEBTOR editor is a '+' button on the
+# address tab row. This is not the same control as the green + beside Addresses
+# on the ORDER editor, which starts a whole new Debtor.
+DEBTOR_ADD_ADDRESS = Locator("+ add address (Debtor editor)", control_type="Button", name="+")
+
 ADDRESS_TYPE = Locator(
     "address type", control_type="Edit", label="address type", label_side="right", radius=320
 )
