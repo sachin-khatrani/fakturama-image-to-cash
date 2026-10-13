@@ -438,10 +438,21 @@ def _label_anchored_candidates(scope: auto.Control, loc: Locator) -> list[auto.C
             # selector sits BELOW its label while the Addresses icons sit above
             # it; proximity alone made the product locator resolve to the
             # address icon.
-            if loc.label_side == "below" and crect.top < lrect.bottom - 2:
-                continue
-            if loc.label_side == "right" and crect.left < lrect.right - 2:
-                continue
+            # Direction must also mean *alignment*, not merely "somewhere over
+            # there". A radius alone pulled in fields one and two rows down —
+            # which is how the First/Last name pair, two unnamed edits sharing
+            # one label, ended up with five candidates and tripped the
+            # sibling-count guard.
+            if loc.label_side == "below":
+                if crect.top < lrect.bottom - 2:
+                    continue
+                if crect.left >= lrect.right or crect.right <= lrect.left:
+                    continue  # must share a column with the label
+            if loc.label_side == "right":
+                if crect.left < lrect.right - 2:
+                    continue
+                if crect.top >= lrect.bottom or crect.bottom <= lrect.top:
+                    continue  # must share a row with the label
             if not any(_same_control(candidate, seen) for seen in out):
                 out.append(candidate)
             break

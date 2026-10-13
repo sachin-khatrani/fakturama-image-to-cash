@@ -154,17 +154,36 @@ DIALOG_CANCEL = Locator("dialog Cancel", control_type="Button", name="Cancel")
 
 DEBTOR_CUSTOMER_ID = Locator("Customer ID", control_type="Edit", label="Customer ID")
 DEBTOR_COMPANY = Locator("Company", control_type="Edit", label="Company")
-DEBTOR_FIRST_NAME = Locator("First Name", control_type="Edit", label="First Name")
-DEBTOR_LAST_NAME = Locator("Name", control_type="Edit", label="Name")
-DEBTOR_SALUTATION = Locator("Salutation", control_type="ComboBox", label="Salutation")
+# First and last name are two UNNAMED edits sharing a single label reading
+# "First Name Last Name". There is no separate "Name" label to anchor to, so the
+# pair is taken by position within that one label's row: left is the given name,
+# right is the family name.
+DEBTOR_FIRST_NAME = Locator(
+    "First Name", control_type="Edit", label="First Name Last Name",
+    label_side="right", index=0, expect_siblings=2, radius=320,
+)
+DEBTOR_LAST_NAME = Locator(
+    "Last Name", control_type="Edit", label="First Name Last Name",
+    label_side="right", index=1, expect_siblings=2, radius=320,
+)
+DEBTOR_SALUTATION = Locator(
+    "Salutation", control_type="ComboBox", label="Salutation", label_side="right", radius=320
+)
 
 TAB_ADDRESSES = Locator("Addresses tab", control_type="TabItem", name="Addresses")
 TAB_MISCELLANEOUS = Locator("Miscellaneous tab", control_type="TabItem", name="Miscellaneous")
 TAB_PAYMENT = Locator("Payment tab", control_type="TabItem", name="Payment")
 
 ADDR_STREET = Locator("address Street", control_type="Edit", label="Street")
-ADDR_ZIP = Locator("address ZIP", control_type="Edit", label="ZIP")
-ADDR_CITY = Locator("address City", control_type="Edit", label="City")
+# Same shape as the name pair: one label "ZIP - City" over two unnamed edits.
+ADDR_ZIP = Locator(
+    "address ZIP", control_type="Edit", label="ZIP - City",
+    label_side="right", index=0, expect_siblings=2, radius=320,
+)
+ADDR_CITY = Locator(
+    "address City", control_type="Edit", label="ZIP - City",
+    label_side="right", index=1, expect_siblings=2, radius=320,
+)
 ADDR_COUNTRY = Locator("address Country", control_type="ComboBox", label="Country")
 ADDR_EMAIL = Locator("address E-Mail", control_type="Edit", label="E-Mail")
 ADDR_PHONE = Locator("address Telephone", control_type="Edit", label="Telephone")

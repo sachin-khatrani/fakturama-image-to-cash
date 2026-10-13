@@ -23,7 +23,7 @@ STEP_SAVE = "4-save-order"
 def open_new_order(session: Session, doc: OrderDocument) -> str:
     """Spec 1.3–1.8. Returns the order number Fakturama proposed."""
     session.click(ui.TOOLBAR_ORDER)  # 1.3
-    session.wait_for_window("Order")
+    session.wait_for_editor("Order")  # an editor TAB, not a window
     session.invalidate()
     log.info("%s: New Order editor open", STEP_OPEN)
 
@@ -316,7 +316,7 @@ def create_followup_invoice(session: Session) -> None:
     not linked to the Order — a silent failure of the actual requirement.
     """
     session.click(ui.FOLLOWUP_INVOICE)
-    session.wait_for_window("Invoice")
+    session.wait_for_editor("Invoice")
     session.invalidate()
     log.info("linked Invoice editor open")
 

@@ -495,6 +495,36 @@ class Session:
 
     # ------------------------------------------------------------------ dialogs
 
+    def wait_for_editor(self, name_contains: str, timeout: float = DEFAULT_TIMEOUT) -> auto.Control:
+        """Wait for an editor to open.
+
+        Fakturama is Eclipse RCP: editors open as **tabs inside the shell
+        window**, not as separate top-level windows. Waiting for a window named
+        'Order' therefore never succeeds, however long you wait — which is
+        exactly how the first real end-to-end run failed.
+
+        The tab is also prefixed with '*' while it has unsaved changes
+        ('*New Order'), so the match is on a substring.
+        """
+        wanted = name_contains.casefold()
+
+        def look() -> Optional[auto.Control]:
+            for control in descendants(self.window, 20):
+                try:
+                    if (control.ControlTypeName or "").replace("Control", "") != "TabItem":
+                        continue
+                    name = (control.Name or "").strip().lstrip("*").casefold()
+                    if wanted in name:
+                        return control
+                except Exception:  # noqa: BLE001
+                    continue
+            return None
+
+        tab = wait_for(look, f"an editor tab named like {name_contains!r}", timeout)
+        log.info("editor open: %r", tab.Name)
+        self.invalidate()
+        return tab
+
     def wait_for_window(self, title_contains: str, timeout: float = DEFAULT_TIMEOUT) -> auto.WindowControl:
         """Wait for a dialog to appear, by title fragment."""
 

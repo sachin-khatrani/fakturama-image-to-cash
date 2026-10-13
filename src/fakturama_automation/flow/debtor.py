@@ -92,7 +92,7 @@ def _confirm_addresses(session: Session, debtor: Debtor) -> None:
 def _create_debtor(session: Session, debtor: Debtor) -> None:
     """Spec 2.5–2.11. The Order tab stays open the whole time."""
     session.click(ui.NEW_CONTACT)  # 2.5
-    session.wait_for_window("Debtor")
+    session.wait_for_editor("Debtor")  # the tab is named "New Debtor"
     session.invalidate()
 
     # 2.6 — leave the proposed Customer ID alone; it is Fakturama's to allocate.
@@ -299,8 +299,12 @@ def _create_payment_method(session: Session, method: PaymentMethod) -> None:
 
 
 def open_data_menu(session: Session, item) -> None:
-    """Open a Data > … list view."""
-    session.click(ui.MENU_DATA)
+    """Open a Data list view from the Navigation View.
+
+    The 'Data' section heading itself is not exposed as an element — only its
+    entries are — so there is nothing to expand first. Clicking the entry is the
+    whole interaction.
+    """
     session.click(item)
     session.invalidate()
 

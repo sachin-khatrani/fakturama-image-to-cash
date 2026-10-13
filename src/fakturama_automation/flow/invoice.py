@@ -277,7 +277,7 @@ def _reopen_and_confirm_persisted(session: Session, doc: OrderDocument) -> None:
 
     try:
         invoice_rows[0].control.DoubleClick(simulateMove=False)
-        session.wait_for_window("Invoice")
+        session.wait_for_editor("Invoice")
         session.invalidate()
     except Exception as exc:  # noqa: BLE001
         log.warning("%s: could not reopen the Invoice (%s)", STEP, exc)

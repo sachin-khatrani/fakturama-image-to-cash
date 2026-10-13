@@ -76,7 +76,7 @@ def _create_product(session: Session, item: LineItem) -> None:
     _ensure_vat(session, item)  # 3.4–3.6 — before New product, deliberately
 
     session.click(ui.NEW_PRODUCT)  # 3.7
-    session.wait_for_window("product")
+    session.wait_for_editor("product")
     session.invalidate()
 
     session.set_text(ui.PRODUCT_ITEM_NUMBER, item.sku)  # 3.8
@@ -152,7 +152,7 @@ def _confirm_existing_vat(session: Session, row: Row, item: LineItem) -> None:
     """
     try:
         row.control.DoubleClick(simulateMove=False)
-        session.wait_for_window("VAT")
+        session.wait_for_editor("VAT")
         session.invalidate()
     except Exception as exc:  # noqa: BLE001
         shot = session.shot(f"{STEP_VAT}-unreadable")
