@@ -1,0 +1,2 @@
+[console_scripts]
+fakturama-automation = fakturama_automation.cli:main

@@ -102,25 +102,79 @@ class Page:
         return None
 
     def value_below(self, label: str, max_gap: int = 90) -> Optional[str]:
-        """The first non-empty line starting below the label and roughly aligned to it."""
+        """The value printed beneath a label, taking only that label's column.
+
+        Returning the whole line below is wrong whenever labels sit side by side,
+        which on this document they do: PAYMENT METHOD / PAID STATUS / PAYMENT
+        DATE share a row, so reading the line under PAID STATUS yielded
+        'Bank Transfer PAID 2026-07-18' — all three values at once.
+
+        So the label's row is first split into columns at the wide gaps between
+        word clusters, and only the words falling inside this label's column are
+        returned.
+        """
         anchor = self.find_label(label)
         if anchor is None:
             return None
-        anchor_left = anchor.left
+
+        left_bound, right_bound = self._column_bounds(anchor, label)
         for line in self.lines:
             if line.top <= anchor.bottom - 2:
                 continue
             if line.top - anchor.bottom > max_gap:
                 break
-            if abs(line.left - anchor_left) > 60:
-                continue
-            return line.text.strip()
+            words = [w for w in line.words if left_bound - 20 <= w.left < right_bound - 10]
+            if words:
+                return " ".join(w.text for w in words).strip()
         return None
 
+    def _column_bounds(self, anchor: "Line", label: str, gap: int = 45) -> tuple[int, int]:
+        """Split the label's row into columns, and return this label's span.
+
+        Columns are separated by a horizontal gap much larger than a word space.
+
+        The row is taken as a *band*, not a single OCR line: side-by-side headings
+        are rarely on exactly the same baseline, so COMPANY and CONTACT NAME land
+        on separate lines and a single-line split finds no neighbour to bound
+        against — which is how the company field swallowed the contact name.
+        """
+        band_top = anchor.top - 12
+        band_bottom = anchor.bottom + 12
+        words: list[Word] = []
+        for line in self.lines:
+            if line.bottom >= band_top and line.top <= band_bottom:
+                words.extend(line.words)
+        words.sort(key=lambda w: w.left)
+
+        clusters: list[list[Word]] = []
+        for word in words:
+            if clusters and word.left - clusters[-1][-1].right <= gap:
+                clusters[-1].append(word)
+            else:
+                clusters.append([word])
+
+        target = label.casefold()
+        for index, cluster in enumerate(clusters):
+            text = " ".join(w.text for w in cluster).casefold()
+            if target in text or text in target:
+                left = cluster[0].left
+                right = clusters[index + 1][0].left if index + 1 < len(clusters) else 10**6
+                return left, right
+        return anchor.left, 10**6
+
     def lines_below(self, label: str, count: int, max_gap: int = 200) -> list[str]:
+        """Several consecutive lines beneath a label, restricted to its column.
+
+        Column-restricted for the same reason as `value_below`: BILLING ADDRESS
+        and DELIVERY ADDRESS sit side by side, so reading whole lines returned
+        both addresses interleaved — and the two then compared equal, which would
+        have told the flow to reuse one address record for both roles.
+        """
         anchor = self.find_label(label)
         if anchor is None:
             return []
+
+        left_bound, right_bound = self._column_bounds(anchor, label)
         out: list[str] = []
         previous_bottom = anchor.bottom
         for line in self.lines:
@@ -128,9 +182,10 @@ class Page:
                 continue
             if line.top - previous_bottom > max_gap:
                 break
-            if abs(line.left - anchor.left) > 80:
+            words = [w for w in line.words if left_bound - 20 <= w.left < right_bound - 10]
+            if not words:
                 continue
-            out.append(line.text.strip())
+            out.append(" ".join(w.text for w in words).strip())
             previous_bottom = line.bottom
             if len(out) == count:
                 break
@@ -152,8 +207,14 @@ def _read_page(image_path: Path) -> Page:
         pytesseract.pytesseract.tesseract_cmd = cmd
 
     try:
+        # --psm 6 ("assume a single uniform block of text") rather than the
+        # default. On the sample order the default segmentation silently dropped
+        # the quantity cell of the first item row -- the row still parsed, just
+        # with one fewer column, which is exactly the kind of miss that produces
+        # a plausible wrong number rather than an error. The reconciliation gate
+        # caught it, but reading the cell correctly is better than catching it.
         data = pytesseract.image_to_data(
-            Image.open(image_path), output_type=pytesseract.Output.DICT
+            Image.open(image_path), config="--psm 6", output_type=pytesseract.Output.DICT
         )
     except Exception as exc:  # pragma: no cover - depends on local install
         raise ExtractionError(
