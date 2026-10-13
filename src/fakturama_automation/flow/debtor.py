@@ -148,6 +148,11 @@ def _confirm_salutation_unset(session: Session) -> None:
 def _fill_main_address(session: Session, debtor: Debtor) -> None:
     """Spec 2.7–2.8."""
     session.click(ui.TAB_ADDRESSES)
+    # Addresses is a tab OF tabs: selecting it does not select the address
+    # underneath it. Without this the fields below resolve to a tab that is not
+    # in front, and the writes silently go nowhere -- the same failure the
+    # 'additional address' tab had.
+    session.select_editor("Main address")
     billing: Address = debtor.billing_address
 
     session.set_text(ui.ADDR_STREET, billing.street)

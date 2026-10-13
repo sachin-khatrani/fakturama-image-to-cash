@@ -366,9 +366,20 @@ class Session:
         last_actual = ""
 
         for attempt in range(1, attempts + 1):
-            if not (
-                self._set_via_value_pattern(control, text) or self._set_via_keyboard(control, text)
-            ):
+            # First attempt prefers the Value pattern; a retry goes straight to
+            # the keyboard. Some SWT fields accept SetValue without error and
+            # then simply do not commit it, so repeating the same mechanism
+            # fails identically every time -- the retry has to change method,
+            # not just try harder.
+            written = (
+                self._set_via_keyboard(control, text)
+                if attempt > 1
+                else (
+                    self._set_via_value_pattern(control, text)
+                    or self._set_via_keyboard(control, text)
+                )
+            )
+            if not written:
                 raise AutomationError(f"could not write to {loc.description}")
             if not verify:
                 return
