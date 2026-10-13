@@ -226,7 +226,14 @@ LIST_SEARCH = Locator("list search box", control_type="Edit", label="Search", la
 PAYMENT_NAME = Locator("payment Name", control_type="Edit", label="Name")
 PAYMENT_DESCRIPTION = Locator("payment Description", control_type="Edit", label="Description")
 PAYMENT_ACCOUNT = Locator("payment Account", control_type="Edit", label="Account")
-PAYMENT_CODE = Locator("payment code dropdown", control_type="ComboBox", label="code")
+# Fakturama 2.2.0 ships this control with its resource key unresolved, so the
+# accessible name is the literal '!editorPaymentPaymentcode!' rather than a
+# translated label. Matching the key is the only thing that works today; if a
+# later release fixes the translation this locator must change, which is why it
+# is called out here rather than buried.
+PAYMENT_CODE = Locator(
+    "payment code dropdown", control_type="ComboBox", name="!editorPaymentPaymentcode!"
+)
 PAYMENT_CASH_DISCOUNT = Locator("Cash discount", control_type="Edit", label="Cash discount")
 PAYMENT_DISCOUNT_DAYS = Locator("Discount Days", control_type="Edit", label="Discount Days")
 PAYMENT_NET_DAYS = Locator("Net Days", control_type="Edit", label="Net Days")

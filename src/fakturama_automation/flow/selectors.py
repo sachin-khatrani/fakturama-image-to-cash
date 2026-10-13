@@ -126,7 +126,9 @@ def read_rows(table: auto.Control) -> list[Row]:
     """Read a result table into rows, however it happens to be built.
 
     Prefers real row elements (DataItem / ListItem / TreeItem) and their cell
-    children. Falls back to the row's accessible name when no cells are exposed.
+    children, then the row's accessible name when no cells are exposed, and
+    finally OCR of the control's own rectangle — which is the only option on
+    Fakturama, where every data view is drawn on a canvas.
     """
     rows: list[Row] = []
     for candidate in descendants(table, 4):
@@ -146,7 +148,14 @@ def read_rows(table: auto.Control) -> list[Row]:
             rows.append(Row(text=text, cells=cells, control=candidate))
         except Exception:  # noqa: BLE001 - a row can disappear mid-read
             continue
-    return rows
+
+    if rows:
+        return rows
+
+    # Nothing element-addressable. Recover the rows visually instead.
+    from ..uia.ocr_rows import read_text_rows
+
+    return [Row(text=text, cells=(), control=table) for text in read_text_rows(table)]
 
 
 def resolve_or_create(

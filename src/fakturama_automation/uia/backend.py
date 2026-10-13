@@ -133,9 +133,17 @@ class Session:
         self.window = window
         self.resolver = Resolver(window)
         self.shots = screenshotter
-        # Set by probing a list view. Fakturama renders data views on a canvas,
-        # so rows are not element-addressable and an empty read is meaningless.
-        self.rows_readable = False
+        # Fakturama renders every data view on a canvas, so rows are not
+        # element-addressable and an empty UIA read carries no information.
+        # They are recovered by OCR instead, so an empty result is only
+        # trustworthy when OCR is actually usable.
+        from .ocr_rows import ocr_available
+
+        self.rows_readable = ocr_available()
+        log.info(
+            "list rows are %s",
+            "readable via OCR" if self.rows_readable else "NOT readable (install Tesseract)",
+        )
 
     # ---------------------------------------------------------------- lifecycle
 
