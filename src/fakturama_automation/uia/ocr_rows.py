@@ -73,20 +73,39 @@ def ocr_available() -> bool:
     return _configure() is not None
 
 
+# Where the Windows installer puts Tesseract. Checked because relying on
+# TESSERACT_CMD alone made OCR availability depend on which entry point was
+# used: the CLI loads .env, nothing else does, and the installer does not put
+# tesseract on PATH. The result was row reading silently disabling itself
+# outside the CLI while reporting nothing unusual.
+DEFAULT_TESSERACT_PATHS = (
+    "C:/Program Files/Tesseract-OCR/tesseract.exe",
+    "C:/Program Files (x86)/Tesseract-OCR/tesseract.exe",
+)
+
+
 def _configure() -> Optional[str]:
-    """Point pytesseract at the binary, honouring TESSERACT_CMD."""
+    """Point pytesseract at the binary: TESSERACT_CMD, PATH, then the usual
+    install locations."""
     try:
         import pytesseract
     except ImportError:
         return None
-    command = os.environ.get("TESSERACT_CMD")
-    if command:
-        pytesseract.pytesseract.tesseract_cmd = command
-    try:
-        pytesseract.get_tesseract_version()
-    except Exception:  # noqa: BLE001 - binary missing or not executable
-        return None
-    return pytesseract.pytesseract.tesseract_cmd
+
+    candidates = [os.environ.get("TESSERACT_CMD"), None, *DEFAULT_TESSERACT_PATHS]
+    for candidate in candidates:
+        if candidate is None:
+            pytesseract.pytesseract.tesseract_cmd = "tesseract"  # rely on PATH
+        else:
+            if not Path(candidate).is_file():
+                continue
+            pytesseract.pytesseract.tesseract_cmd = candidate
+        try:
+            pytesseract.get_tesseract_version()
+            return pytesseract.pytesseract.tesseract_cmd
+        except Exception:  # noqa: BLE001 - try the next candidate
+            continue
+    return None
 
 
 def read_text_rows(control: auto.Control) -> list[str]:
@@ -140,9 +159,20 @@ def read_text_rows(control: auto.Control) -> list[str]:
             pass
 
     try:
-        # --psm 6 reads a uniform block line by line, which is what a table is.
+        # Grayscale, doubled, and --psm 4. Each part earns its place, measured on
+        # a real Fakturama list: at native size Tesseract read ONLY the grey
+        # header row and silently dropped every data row, because the row text
+        # is thin and low-contrast. Doubling recovers the rows. --psm 4 ("a
+        # single column of variable-sized text") then reads identifiers exactly
+        # where --psm 6 garbles them -- 'CUST000001' versus 'CusTo00001', which
+        # matters because record matching is on exact identifiers.
+        from PIL import ImageOps
+
+        prepared = ImageOps.grayscale(image).resize(
+            (image.width * 2, image.height * 2), Image.LANCZOS
+        )
         data = pytesseract.image_to_data(
-            image, config="--psm 6", output_type=pytesseract.Output.DICT
+            prepared, config="--psm 4", output_type=pytesseract.Output.DICT
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("OCR of the list failed: %s", exc)
