@@ -207,6 +207,11 @@ class FakeSession:
         self._record(f"wait-window:{title}")
         return FakeControl(title)
 
+    def select_editor(self, name: str, timeout: float = 0):
+        self._record(f"select-editor:{name}")
+        self.open_editor = "order" if "order" in name.lower() else name.lower()
+        return FakeControl(name)
+
     def wait_for_editor(self, name: str, timeout: float = 0):
         """Fakturama editors are tabs inside the shell, not separate windows."""
         self._record(f"wait-editor:{name}")

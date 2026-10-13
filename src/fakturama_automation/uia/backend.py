@@ -536,6 +536,28 @@ class Session:
         self.invalidate()
         return tab
 
+    def select_editor(self, name_contains: str, timeout: float = DEFAULT_TIMEOUT) -> auto.Control:
+        """Bring an already-open editor tab to the front.
+
+        Creating master data opens a second editor on top of the first, and the
+        specification is explicit that the Order (and the Debtor) stay open
+        underneath. Coming back means selecting that tab again — the controls of
+        a background tab are not reachable.
+        """
+        tab = self.wait_for_editor(name_contains, timeout)
+        try:
+            pattern = tab.GetSelectionItemPattern()
+            if pattern is not None:
+                pattern.Select()
+            else:
+                tab.Click(simulateMove=False)
+        except Exception:  # noqa: BLE001
+            tab.Click(simulateMove=False)
+        time.sleep(0.4)
+        self.invalidate()
+        log.info("switched back to editor %r", tab.Name)
+        return tab
+
     def wait_for_window(self, title_contains: str, timeout: float = DEFAULT_TIMEOUT) -> auto.WindowControl:
         """Wait for a dialog to appear, by title fragment."""
 

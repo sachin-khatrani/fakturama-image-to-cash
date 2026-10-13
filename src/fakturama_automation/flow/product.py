@@ -50,6 +50,7 @@ def select_or_create_product(session: Session, item: LineItem) -> None:
         is_exact=lambda row: _is_exact_product(row, item),
         create=lambda: _create_product(session, item),
         entity="Product",
+        reopen=lambda: session.click(ui.PRODUCT_SELECT_ICON),  # 3.12
     )
 
 
@@ -95,6 +96,7 @@ def _create_product(session: Session, item: LineItem) -> None:
 
     session.shot(f"{STEP}-{item.sku}-before-save")
     session.click(ui.TOOLBAR_SAVE)  # 3.11 — once
+    session.select_editor("Order")  # 3.12 — back to the still-open Order
     log.info(
         "%s: created product %s at gross %s with %s",
         STEP,

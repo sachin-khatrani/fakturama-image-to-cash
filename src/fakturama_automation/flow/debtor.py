@@ -33,6 +33,7 @@ def select_or_create_debtor(session: Session, debtor: Debtor) -> None:
         is_exact=lambda row: _is_exact_debtor(row, debtor),
         create=lambda: _create_debtor(session, debtor),
         entity="Debtor",
+        reopen=lambda: session.click(ui.ADDRESS_SELECT_ICON),  # 2.12
     )
     _confirm_addresses(session, debtor)
 
@@ -120,6 +121,8 @@ def _create_debtor(session: Session, debtor: Debtor) -> None:
     session.shot(f"{STEP}-debtor-before-save")
     session.click(ui.TOOLBAR_SAVE)  # 2.11 — once
     log.info("%s: saved new Debtor %r", STEP, debtor.company)
+    # 2.12 — back to the still-open Order, where the selector is re-run.
+    session.select_editor("Order")
 
 
 def _confirm_salutation_unset(session: Session) -> None:
@@ -180,6 +183,10 @@ def _add_delivery_address(session: Session, debtor: Debtor) -> None:
     delivery = debtor.delivery_address
     try:
         session.click(ui.DEBTOR_ADD_ADDRESS)
+        # The + creates an 'additional address #N' tab but does NOT bring it to
+        # the front, so without this every field below is written into the main
+        # address instead -- silently overwriting the billing address.
+        session.select_editor("additional address")
         session.set_text(ui.ADDR_STREET, delivery.street)
         session.set_text(ui.ADDR_ZIP, delivery.zip)
         session.set_text(ui.ADDR_CITY, delivery.city)
@@ -255,6 +262,8 @@ def _ensure_payment_method(session: Session, method: PaymentMethod) -> None:
 
     _create_payment_method(session, method)
 
+    # 2.10.6 — return to the Debtor editor, which stayed open underneath.
+    session.select_editor("Debtor")
     session.click(ui.TAB_PAYMENT)
     try:
         session.select_option(ui.DEBTOR_PAYMENT_METHOD, method.value)

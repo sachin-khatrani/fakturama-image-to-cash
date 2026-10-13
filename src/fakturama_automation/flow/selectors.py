@@ -167,12 +167,19 @@ def resolve_or_create(
     is_exact: Callable[[Row], bool],
     create: Callable[[], None],
     entity: str,
+    reopen: Optional[Callable[[], None]] = None,
 ) -> None:
     """Run the full select-or-create branch for one master-data record.
 
     On the second pass the record must be selectable — successfully selecting it
     from the Order *is* the proof that it saved. If it is still not there, the
     creation silently failed and a human needs to look.
+
+    `reopen` reopens the selector for that second pass. It is required on the
+    create path and easy to forget: the dialog was cancelled before the record
+    was created, so by the time control returns to the Order there is nothing
+    open to search. A simulated dialog hides this, because constructing one
+    costs nothing there.
     """
     dialog = SelectorDialog(session, dialog_title)
     rows = dialog.search(search_term)
@@ -231,6 +238,8 @@ def resolve_or_create(
     dialog.cancel()
     create()
 
+    if reopen is not None:
+        reopen()
     dialog = SelectorDialog(session, dialog_title)
     rows = dialog.search(search_term)
     matches = [row for row in rows if is_exact(row)]
