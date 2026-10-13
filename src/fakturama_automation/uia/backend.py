@@ -241,6 +241,45 @@ class Session:
 
     # ------------------------------------------------------------- diagnostics
 
+    def blocking_dialog(self) -> Optional[tuple[str, str]]:
+        """Any modal dialog sitting in front of the editor, as (title, text).
+
+        This matters more than it looks. When Fakturama raises a modal — a
+        duplicate-contact warning, a validation error — the editor underneath
+        stops accepting input, but UI Automation still resolves its controls
+        happily. Writes then go nowhere and read back empty, and the automation
+        reports 'the ZIP field did not accept 10117' when the real answer is
+        'a dialog is asking you about a duplicate contact'. Misdiagnosing that
+        costs far more time than detecting it.
+        """
+        # SWT parents its dialogs INSIDE the shell window, so a desktop-level
+        # scan misses them entirely -- which is how 'Duplicate Contact' stayed
+        # invisible while silently blocking every write.
+        candidates = list(auto.GetRootControl().GetChildren()) + [
+            c for c in descendants(self.window, 6)
+            if (c.ControlTypeName or "").replace("Control", "") == "Window"
+        ]
+        own = (self.window.Name or "").strip()
+        for window in candidates:
+            try:
+                if window.ControlTypeName != "WindowControl":
+                    continue
+                title = (window.Name or "").strip()
+                if not title or title == own:
+                    continue
+                if _process_name(window) not in ("", _process_name(self.window)):
+                    continue
+                texts = [
+                    (c.Name or "").strip()
+                    for c in descendants(window, 5)
+                    if (c.ControlTypeName or "").replace("Control", "") == "Text"
+                    and (c.Name or "").strip()
+                ]
+                return title, " | ".join(texts[:4])
+            except Exception:  # noqa: BLE001
+                continue
+        return None
+
     def shot(
         self,
         label: str,
@@ -387,6 +426,14 @@ class Session:
             if _equivalent(last_actual, text):
                 log.debug("%s = %r", loc.description, text)
                 return
+            blocking = self.blocking_dialog()
+            if blocking:
+                title, message = blocking
+                raise AutomationError(
+                    f"cannot write {loc.description}: the application is showing a modal "
+                    f"dialog titled {title!r} ({message}). The editor underneath does not "
+                    "accept input while it is open."
+                )
             if attempt < attempts:
                 log.warning(
                     "%s read back as %r after writing %r; clearing and retrying",
